@@ -21,7 +21,7 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { FastAndSlowPicks, IPickerQuickAccessItem, IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks } from 'vs/platform/quickinput/browser/pickerQuickAccess';
 import { IQuickAccessProviderRunOptions } from 'vs/platform/quickinput/common/quickAccess';
 import { IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
+import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from 'vs/platform/storage/common/storage';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export interface ICommandQuickPick extends IPickerQuickAccessItem {
@@ -327,6 +327,14 @@ export class CommandsHistory extends Disposable {
 
 	private registerListeners(): void {
 		this._register(this.configurationService.onDidChangeConfiguration(e => this.updateConfiguration(e)));
+		this._register(this.storageService.onWillSaveState(e => {
+			if (e.reason === WillSaveStateReason.SHUTDOWN) {
+				// Commands history is very dynamic and so we limit impact
+				// on storage to only save on shutdown. This helps reduce
+				// the overhead of syncing this data across machines.
+				CommandsHistory.saveState(this.storageService);
+			}
+		}));
 	}
 
 	private updateConfiguration(e?: IConfigurationChangeEvent): void {
@@ -338,8 +346,6 @@ export class CommandsHistory extends Disposable {
 
 		if (CommandsHistory.cache && CommandsHistory.cache.limit !== this.configuredCommandsHistoryLength) {
 			CommandsHistory.cache.limit = this.configuredCommandsHistoryLength;
-
-			CommandsHistory.saveState(this.storageService);
 		}
 	}
 
@@ -374,8 +380,6 @@ export class CommandsHistory extends Disposable {
 		}
 
 		CommandsHistory.cache.set(commandId, CommandsHistory.counter++); // set counter to command
-
-		CommandsHistory.saveState(this.storageService);
 	}
 
 	peek(commandId: string): number | undefined {
