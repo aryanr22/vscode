@@ -46,7 +46,7 @@ export interface IHostService {
 	 * focused application which may not be VSCode. It may not be supported
 	 * in all environments.
 	 */
-	focus(options?: { force: boolean }): Promise<void>;
+	focus(options?: { force: boolean, id?: string }): Promise<void>;
 
 	//#endregion
 

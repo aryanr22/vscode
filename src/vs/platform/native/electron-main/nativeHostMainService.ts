@@ -220,13 +220,22 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		}
 	}
 
-	async focusWindow(windowId: number | undefined, options?: { windowId?: number; force?: boolean }): Promise<void> {
+	async focusWindow(windowId: number | undefined, options?: { windowId?: number; force?: boolean, id?: string }): Promise<void> {
 		if (options && typeof options.windowId === 'number') {
 			windowId = options.windowId;
 		}
 
-		const window = this.windowById(windowId);
-		window?.focus({ force: options?.force ?? false });
+		if (options?.id) {
+			for (const browserWindow of BrowserWindow.getAllWindows()) {
+				if (browserWindow.webContents.getURL().includes(options.id)) {
+					browserWindow.restore();
+					browserWindow.focus();
+				}
+			}
+		} else {
+			const window = this.windowById(windowId);
+			window?.focus({ force: options?.force ?? false });
+		}
 	}
 
 	async setMinimumSize(windowId: number | undefined, width: number | undefined, height: number | undefined): Promise<void> {

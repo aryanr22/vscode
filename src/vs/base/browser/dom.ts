@@ -17,17 +17,17 @@ import { FileAccess, RemoteAuthorities, Schemas } from 'vs/base/common/network';
 import * as platform from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
 
-export const { registerWindow, getWindows, onDidRegisterWindow } = (function () {
-	const windows = new Set([window]);
+export const { registerWindow, getWindows, getId, onDidRegisterWindow } = (function () {
+	const windows = new Map<Window & typeof globalThis, string>([[window, 'main']]);
 	const onDidRegisterWindow = new event.Emitter<{ window: Window & typeof globalThis; disposableStore: DisposableStore }>();
 	return {
 		onDidRegisterWindow: onDidRegisterWindow.event,
-		registerWindow(window: Window & typeof globalThis): IDisposable {
+		registerWindow(window: Window & typeof globalThis, id: string): IDisposable {
 			if (windows.has(window)) {
 				return Disposable.None;
 			}
 
-			windows.add(window);
+			windows.set(window, id);
 
 			const disposableStore = new DisposableStore();
 			disposableStore.add(toDisposable(() => {
@@ -39,7 +39,10 @@ export const { registerWindow, getWindows, onDidRegisterWindow } = (function () 
 			return disposableStore;
 		},
 		getWindows(): Iterable<Window & typeof globalThis> {
-			return windows;
+			return windows.keys();
+		},
+		getId(window: Window & typeof globalThis): string {
+			return windows.get(window) ?? 'main';
 		}
 	};
 })();

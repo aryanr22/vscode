@@ -148,7 +148,7 @@ export abstract class Composite extends Component implements IComposite {
 	 * Called when this composite should receive keyboard focus.
 	 */
 	focus(): void {
-		// Subclasses can implement
+		// Subclasses can implement //
 	}
 
 	/**

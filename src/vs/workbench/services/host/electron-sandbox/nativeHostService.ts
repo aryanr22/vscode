@@ -119,7 +119,7 @@ class WorkbenchHostService extends Disposable implements IHostService {
 
 	//#region Lifecycle
 
-	focus(options?: { force: boolean }): Promise<void> {
+	focus(options?: { force: boolean, id: string }): Promise<void> {
 		return this.nativeHostService.focusWindow(options);
 	}
 

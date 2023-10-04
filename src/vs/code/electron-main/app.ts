@@ -397,6 +397,8 @@ export class CodeApplication extends Disposable {
 
 					contents.setZoomLevel(windowZoomLevel);
 					contents.setZoomFactor(zoomLevelToZoomFactor(windowZoomLevel));
+
+					console.log(contents.getURL());
 				});
 
 				if (this.environmentMainService.args['open-devtools'] === true) {
@@ -409,7 +411,7 @@ export class CodeApplication extends Disposable {
 			contents.setWindowOpenHandler(handler => {
 
 				// about:blank windows can open as window witho our default options
-				if (handler.url === 'about:blank') {
+				if (handler.url.startsWith('about:blank#')) {
 					this.logService.trace('webContents#setWindowOpenHandler: Allowing about:blank window to open');
 
 					return {

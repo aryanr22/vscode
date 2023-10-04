@@ -10,7 +10,7 @@ import Severity from 'vs/base/common/severity';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { EditorExtensions, EditorInputCapabilities, IEditorOpenContext, IVisibleEditorPane, isEditorOpenError } from 'vs/workbench/common/editor';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
-import { Dimension, show, hide, IDomNodePagePosition, isAncestor } from 'vs/base/browser/dom';
+import { Dimension, show, hide, IDomNodePagePosition, isAncestor, getId } from 'vs/base/browser/dom';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IEditorPaneRegistry, IEditorPaneDescriptor } from 'vs/workbench/browser/editor';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
@@ -27,6 +27,7 @@ import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IDialogService, IPromptButton, IPromptCancelButton } from 'vs/platform/dialogs/common/dialogs';
 import { IBoundarySashes } from 'vs/base/browser/ui/sash/sash';
+import { IHostService } from 'vs/workbench/services/host/browser/host';
 
 export interface IOpenEditorResult {
 
@@ -255,6 +256,10 @@ export class EditorPanes extends Disposable {
 		const focus = !options || !options.preserveFocus;
 		if (!cancelled && focus && this.shouldRestoreFocus(activeElement)) {
 			pane.focus();
+			this.instantiationService.invokeFunction(accessor => {
+				const hostService = accessor.get(IHostService);
+				hostService.focus({force: true, id: getId(pane.getContainer()!.ownerDocument.defaultView!.window)});
+			});
 		}
 
 		return { pane, changed, cancelled };

@@ -14,6 +14,7 @@ import { onUnexpectedError } from 'vs/base/common/errors';
 import { isWeb } from 'vs/base/common/platform';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
+import { generateUuid } from 'vs/base/common/uuid';
 
 export const IAuxiliaryWindowService = createDecorator<IAuxiliaryWindowService>('auxiliaryWindowService');
 
@@ -45,8 +46,9 @@ export class AuxiliaryWindowService implements IAuxiliaryWindowService {
 	open(): IAuxiliaryWindow {
 		const disposables = new DisposableStore();
 
-		const auxiliaryWindow = assertIsDefined(window.open('about:blank')?.window);
-		disposables.add(registerWindow(auxiliaryWindow));
+		const id = generateUuid();
+		const auxiliaryWindow = assertIsDefined(window.open(`about:blank#${id}`)?.window);
+		disposables.add(registerWindow(auxiliaryWindow, id));
 		disposables.add(toDisposable(() => auxiliaryWindow.close()));
 
 		this.blockMethods(auxiliaryWindow);
