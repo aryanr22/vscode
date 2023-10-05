@@ -102,8 +102,9 @@ with open(r'Shortened RAPTOR.csv', 'w', newline="\n") as f:
     wr.writerow(['name', 'posessions', 'minutes', 'offense', 'defense', 'total'])
     wr.writerows(values)
 
-
-
+stats = {'names': [],
+         'possessions': []}
+stats['names'][3]
 anotherName = []
 anotherPosession = []
 anotherMinutes = []
@@ -147,21 +148,17 @@ class BasketBallPlayer:
         self.total = total
 
     def __str__(self):
-        return f"{self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. \
-    	His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
+        return f"{self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
 
     def possPerMin(self):
         print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
     def possPerGame(self):
         print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if their numbers spread across 82 games")
     def minPerGame(self):
-    	print(f"He would have averaged approx. {self.minutes // 82} posessions per game, if their numbers spread across 82 games")
+    	print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if their numbers spread across 82 games")
 
 
 found_player = None
-
-
-
 
 
 people_objects = []
@@ -170,8 +167,8 @@ for data in NextValues:
     player = BasketBallPlayer(name, posessions, minutes, offense, defense, total)
     people_objects.append(player)
 
-for player in people_objects:
-    print(player)
+#for player in people_objects:
+#    print(player)
 
 name_input = input("Enter a Player Name: ")
 

@@ -43,18 +43,22 @@ ShortenedRaptorDefense = [[e] for e in ShortenedRaptorDefense]
 DecimalRaptorTotal = [[e] for e in DecimalRaptorTotal]
 ShortenedRaptorTotal = [[e] for e in ShortenedRaptorTotal]
 
-NewValues = []
-for x in range(len(ShortenedRaptorOffense)):
-    row = [ShortenedRaptorOffense[x], DecimalRaptorOffense[x], ShortenedRaptorDefense[x], DecimalRaptorDefense[x], ShortenedRaptorTotal[x], DecimalRaptorTotal[x]]
-    NewValues.append(row)
+#Name = [i for i in Name]
+Posessions = [[i] for i in Posessions]
+MinutesPlayed = [[i] for i in MinutesPlayed]
+
+ShortenedRaptorOffense = [[i] for i in ShortenedRaptorOffense]
+DecimalRaptorOffense = [[i] for i in DecimalRaptorOffense]
+
+ShortenedRaptorDefense = [[i] for i in ShortenedRaptorDefense]
+DecimalRaptorDefense = [[i] for i in DecimalRaptorDefense]
+
+ShortenedRaptorTotal = [[i] for i in ShortenedRaptorTotal]
+DecimalRaptorTotal = [[i] for i in DecimalRaptorTotal]
 
 
 
 
-with open(r'RAPTOR 2022-23 With New Data.csv', 'w', newline="\n") as f:
-    wr = csv.writer(f)
-    wr.writerow(['offense_shortened', 'offense_decimal', 'defense_shortened', 'defense_decimal', 'total_shortened', 'total_decimal'])
-    wr.writerows(NewValues)
 
 #test
 
