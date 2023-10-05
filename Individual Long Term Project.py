@@ -1,60 +1,60 @@
 import csv
 
-Name = []
-Posessions = []
-MinutesPlayed = []
+name = []
+posessions = []
+minutesPlayed = []
 
-ShortenedRaptorOffense = []
-DecimalRaptorOffense = []
+intRaptorOffense = []
+decimalRaptorOffense = []
 
-ShortenedRaptorDefense = []
-DecimalRaptorDefense = []
+intRaptorDefense = []
+decimalRaptorDefense = []
 
-ShortenedRaptorTotal = []
-DecimalRaptorTotal = []
+intRaptorTotal = []
+decimalRaptorTotal = []
 
 with open('RAPTOR 2022-23.csv') as file:
 	rows = csv.DictReader(file)
 
 	for row in rows:
-		name = str(row['player_name'])
-		posessions = int(row['poss'])
-		minutes = int(row['mp'])
+		nameStr = str(row['player_name'])
+		posessionsInt = int(row['poss'])
+		minutesInt = int(row['mp'])
 
-		s_o = float(row['raptor_offense']) // 1
-		d_o = float(row['raptor_offense']) % 1
+		sO = float(row['raptor_offense']) // 1
+		dO = float(row['raptor_offense']) % 1
 
-		s_d = float(row['raptor_offense']) // 1
-		d_d = float(row['raptor_offense']) % 1
+		sD = float(row['raptor_offense']) // 1
+		dD = float(row['raptor_offense']) % 1
 
-		s_t = float(row['raptor_offense']) // 1
-		d_t = float(row['raptor_offense']) % 1
+		sT = float(row['raptor_offense']) // 1
+		dT = float(row['raptor_offense']) % 1
 
-		Name.append(name)
-		Posessions.append(posessions)
-		MinutesPlayed.append(minutes)
+		name.append(nameStr)
+		posessions.append(posessionsInt)
+		minutesPlayed.append(minutesInt)
 
-		ShortenedRaptorOffense.append(s_o)
-		DecimalRaptorOffense.append(d_o)
+		intRaptorOffense.append(sO)
+		decimalRaptorOffense.append(dO)
 
-		ShortenedRaptorDefense.append(s_d)
-		DecimalRaptorDefense.append(d_d)
+		intRaptorDefense.append(sD)
+		decimalRaptorDefense.append(dD)
 
-		ShortenedRaptorTotal.append(s_t)
-		DecimalRaptorTotal.append(d_t)
+		intRaptorTotal.append(sT)
+		decimalRaptorTotal.append(dT)
 
 
 
-NewValues = []
-for x in range(len(ShortenedRaptorOffense)):
-    row = [Name[x], Posessions[x], MinutesPlayed[x], ShortenedRaptorOffense[x], DecimalRaptorOffense[x], ShortenedRaptorDefense[x], DecimalRaptorDefense[x], ShortenedRaptorTotal[x], DecimalRaptorTotal[x]]
-    NewValues.append(row)
+newValues = []
+for x in range(len(intRaptorOffense)):
+    row = [name[x], posessions[x], minutesPlayed[x], intRaptorOffense[x], decimalRaptorOffense[x], intRaptorDefense[x], decimalRaptorDefense[x], intRaptorTotal[x], decimalRaptorTotal[x]]
+    newValues.append(row)
 
 
 with open(r'RAPTOR 2022-23 With New Data.csv', 'w', newline="\n") as f:
     wr = csv.writer(f)
     wr.writerow(['name', 'posessions', 'minutes', 'offense_shortened', 'offense_decimal', 'defense_shortened', 'defense_decimal', 'total_shortened', 'total_decimal',])
-    wr.writerows(NewValues)
+    wr.writerows(newValues)
 
 
 shortName = []
@@ -76,41 +76,42 @@ with open('RAPTOR 2022-23 With New Data.csv') as file:
 		posessions = int(row['posessions'])
 		minutes = int(row['minutes'])
 
-		o_s = float(row['offense_shortened'])
-		d_s = float(row['defense_shortened'])
-		t_s = float(row['total_shortened'])
+		oS = float(row['offense_shortened'])
+		dS = float(row['defense_shortened'])
+		tS = float(row['total_shortened'])
 
 		shortName.append(name)
 		shortPosessions.append(posessions)
 		shortMinutesPlayed.append(minutes)
 
-		shortOffense.append(o_s)
-		shortDefense.append(d_s)
-		shortTotal.append(t_s)
+		shortOffense.append(oS)
+		shortDefense.append(dS)
+		shortTotal.append(tS)
 
-for x in range(len(ShortenedRaptorOffense)):
+for x in range(len(intRaptorOffense)):
 	if(shortMinutesPlayed[x] >= 2500):
 		row = [shortName[x], shortPosessions[x], shortMinutesPlayed[x], shortOffense[x], shortDefense[x], shortTotal[x]]
 		values.append(row)
 	else:
 		x +=1
 
-#print(shortName)
+
 
 with open(r'Shortened RAPTOR.csv', 'w', newline="\n") as f:
     wr = csv.writer(f)
     wr.writerow(['name', 'posessions', 'minutes', 'offense', 'defense', 'total'])
     wr.writerows(values)
 
-stats = {'names': [],
-         'possessions': []}
-stats['names'][3]
-anotherName = []
-anotherPosession = []
-anotherMinutes = []
-anotherOffense = []
-anotherDefense = []
-anotherTotal = []
+#stats = {'names': [],
+#         'possessions': []}
+#stats['names'][3]
+
+smallestName = []
+smallestPosession = []
+smallestMinutes = []
+smallestOffense = []
+smallestDefense = []
+smallestTotal = []
 
 with open('Shortened RAPTOR.csv') as fiddle:
 	rows = csv.DictReader(fiddle)
@@ -123,18 +124,18 @@ with open('Shortened RAPTOR.csv') as fiddle:
 		d = float(row['defense'])
 		t = float(row['total'])
 
-		anotherName.append(name)
-		anotherPosession.append(posessions)
-		anotherMinutes.append(minutes)
+		smallestName.append(name)
+		smallestPosession.append(posessions)
+		smallestMinutes.append(minutes)
 
-		anotherOffense.append(o)
-		anotherDefense.append(d)
-		anotherTotal.append(t)
+		smallestOffense.append(o)
+		smallestDefense.append(d)
+		smallestTotal.append(t)
 
-NextValues = []
-for x in range(len(anotherName)):
-    row = [anotherName[x], anotherPosession[x], anotherMinutes[x], anotherOffense[x], anotherDefense[x], anotherTotal[x]]
-    NextValues.append(row)
+nextValues = []
+for x in range(len(smallestName)):
+    row = [smallestName[x], smallestPosession[x], smallestMinutes[x], smallestOffense[x], smallestDefense[x], smallestTotal[x]]
+    nextValues.append(row)
 
 
 
@@ -153,37 +154,37 @@ class BasketBallPlayer:
     def possPerMin(self):
         print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
     def possPerGame(self):
-        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if their numbers spread across 82 games")
+        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers spread across 82 games")
     def minPerGame(self):
-    	print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if their numbers spread across 82 games")
+    	print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers spread across 82 games")
 
 
-found_player = None
+foundPlayer = None
 
 
-people_objects = []
-for data in NextValues:
+playerObjects = []
+for data in nextValues:
     name, posessions, minutes, offense, defense, total = data
     player = BasketBallPlayer(name, posessions, minutes, offense, defense, total)
-    people_objects.append(player)
+    playerObjects.append(player)
 
 #for player in people_objects:
 #    print(player)
 
-name_input = input("Enter a Player Name: ")
+nameInput = input("Enter a Player Name: ")
 
 
-for player in people_objects:
-    if player.name == name_input:
-        found_player = player
+for player in playerObjects:
+    if player.name == nameInput:
+        foundPlayer = player
         break
 
 
-if found_player:
-    print(found_player)
-    found_player.possPerMin()
-    found_player.possPerGame()
-    found_player.minPerGame()
+if foundPlayer:
+    print(foundPlayer)
+    foundPlayer.possPerMin()
+    foundPlayer.possPerGame()
+    foundPlayer.minPerGame()
 else:
     print("Player not found.")
 
