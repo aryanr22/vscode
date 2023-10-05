@@ -95,6 +95,7 @@ for x in range(len(ShortenedRaptorOffense)):
 	else:
 		x +=1
 
+#print(shortName)
 
 with open(r'Shortened RAPTOR.csv', 'w', newline="\n") as f:
     wr = csv.writer(f)
@@ -103,16 +104,72 @@ with open(r'Shortened RAPTOR.csv', 'w', newline="\n") as f:
 
 
 
+anotherName = []
+anotherPosession = []
+anotherMinutes = []
+anotherOffense = []
+anotherDefense = []
+anotherTotal = []
 
-for x in range(len(shortName)):
-    user_input = input("Enter a Player Name: ")
-    if user_input == shortName[x]:
-        print(values[x])
+with open('Shortened RAPTOR.csv') as fiddle:
+	rows = csv.DictReader(fiddle)
+	for row in rows:
+		name = str(row['name'])
+		posessions = int(row['posessions'])
+		minutes = int(row['minutes'])
+
+		o = float(row['offense'])
+		d = float(row['defense'])
+		t = float(row['total'])
+
+		anotherName.append(name)
+		anotherPosession.append(posessions)
+		anotherMinutes.append(minutes)
+
+		anotherOffense.append(o)
+		anotherDefense.append(d)
+		anotherTotal.append(t)
+
+NextValues = []
+for x in range(len(anotherName)):
+    row = [anotherName[x], anotherPosession[x], anotherMinutes[x], anotherOffense[x], anotherDefense[x], anotherTotal[x]]
+    NextValues.append(row)
+
+class BasketBallPlayer:
+    def __init__(self, name, posessions, minutes, offense, defense, total):
+        self.name = name
+        self.posessions = posessions
+        self.minutes = minutes
+        self.offense = offense
+        self.defense = defense
+        self.total = total
+
+
+people_objects = []
+for data in NextValues:
+    name, posessions, minutes, offense, defense, total = data
+    player = BasketBallPlayer(name, posessions, minutes, offense, defense, total)
+    people_objects.append(player)
+
+#for player in people_objects:
+#   print(player.name, player.posessions, player.minutes, player.offense, player.defense, player.total)
+
+name_input = input("Enter a Player Name: ")
+found_player = None
+
+for player in people_objects:
+    if player.name == name_input:
+        found_player = player
         break
-    else:
-        print("didnt work try agin")
-        x += 1
-        break
+
+
+if found_player:
+    print(player.name, player.posessions, player.minutes, player.offense, player.defense, player.total)
+else:
+    print("Player not found. Try again.")
+
+
+
 
 
 
