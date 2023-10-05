@@ -12,6 +12,8 @@
 # Updtaed: 04-October-2023
 #-----------------------------------------------------------------------------------------------
 import csv
+from BasketBallPlayer import BasketBallPlayer
+
 
 # Creating arrays for each row in the "Raptor New Data" csv file (int = truncated number, decimal = the leftover decimals)
 name = []
@@ -173,122 +175,6 @@ for x in range(len(smallestName)):
 
 
 
-class BasketBallPlayer():
-    '''
-    A basketball players class that holds the name, posessions, minutes, offense, defense, and total of basketball players
-
-    Attributes
-    ----------
-    name : str
-			Full name of the basketball player
-    posessions : int
-			The # of total posessions played by the basketball player
-    minutes : int
-			The # of total minutes played by the basketball player
-    offense : float
-			The truncated RAPTOR offense rating for this player
-    defense : float
-			The truncated RAPTOR defense rating for this player
-    total : float
-		    The truncated RAPTOR total rating for this player
-
-    Methods
-    -------
-    possPerMin() -> int
-			Prints the # of posessions each player averages per minute
-	possPerGame() -> int
-			Prints the # of posessions each player averages per game, if their total stats were spread across 82 games
-	minPerGame() -> int
-			Prints the # of minutes each player averages per game, if their total stats were spread across 82 games
-
-    '''
-    def __init__(self, name, posessions, minutes, offense, defense, total):
-        '''
-        Constructor to build a basketball player object
-
-
-        Parameters
-        ----------
-        name : str
-				Full name of the basketball player
-    	posessions : int
-				The # of total posessions played by the basketball player
-    	minutes : int
-				The # of total minutes played by the basketball player
-    	offense : float
-				The truncated RAPTOR offense rating for this player
-    	defense : float
-				The truncated RAPTOR defense rating for this player
-    	total : float
-		    	The truncated RAPTOR total rating for this player
-
-
-
-        '''
-        self.name = name
-        self.posessions = posessions
-        self.minutes = minutes
-        self.offense = offense
-        self.defense = defense
-        self.total = total
-
-    def __str__(self):
-        '''
-        Returns a string with the basketball player's name, # of posessions, # of minutes, RAPTOR offense, RAPTOR defense, and RAPTOR total
-
-        Returns
-        -------
-        The basketball player's name, posessionss, minutes, offense, defense, total in a string
-
-
-        '''
-        return f"{self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
-
-    def possPerMin(self):
-        '''
-        Prints basketball player's posessions per minute
-
-        This divides the player's total posessions by their total minutes
-
-        Prints
-        ------
-        String
-				Includes the player's posessions per minute
-
-        '''
-        print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
-
-    def possPerGame(self):
-        '''
-        Prints basketball player's posessions per game, if spread across 82 games
-
-        This divides the player's total posessions by 82 (# of games in a season)
-
-        Prints
-        ------
-        String
-				Includes the player's posessions per game
-
-        '''
-        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers were spread across 82 games")
-
-    def minPerGame(self):
-        '''
-        Prints basketball player's posessions per minute
-
-        This divides the player's total minutes by 82 (# of games in a season)
-
-        Prints
-        ------
-        String
-				Includes the player's minutes per game
-
-        '''
-        print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers were spread across 82 games")
-
-
-
-
 foundPlayer = None
 
 # Creating a 2d array with each of the objects (players) and their attributes (statistics)
@@ -303,14 +189,14 @@ for data in nextValues:
 
 
 # Taking user input to find a player to search from selective list
-nameInput = input("Enter a Player Name: ")
 
+nameInput = input("Enter a Player Name: ")
 
 # Comparing user input to selective list of players
 for player in playerObjects:
-	if player.name == nameInput:
-		foundPlayer = player
-		break
+    if player.name == nameInput:
+        foundPlayer = player
+    break
 
 
 # If match is found, the player's key values are printed, along with their posessions per minute, posessions per game, and minutes per game
@@ -322,6 +208,8 @@ if foundPlayer:
 	foundPlayer.minPerGame()
 else:
    	print("Player not found.")
+
+
 
 
 
