@@ -7,6 +7,7 @@ import * as browser from 'vs/base/browser/browser';
 import * as dom from 'vs/base/browser/dom';
 import { DomEmitter } from 'vs/base/browser/event';
 import { IKeyboardEvent, StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
+import { inputLatency } from 'vs/base/browser/performance';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { Emitter, Event } from 'vs/base/common/event';
 import { KeyCode } from 'vs/base/common/keyCodes';
@@ -52,7 +53,7 @@ export interface ClipboardStoredMetadata {
 
 export interface ITextAreaInputHost {
 	getDataToCopy(): ClipboardDataToCopy;
-	getScreenReaderContent(currentState: TextAreaState): TextAreaState;
+	getScreenReaderContent(): TextAreaState;
 	deduceModelPosition(viewAnchorPosition: Position, deltaOffset: number, lineFeedCnt: number): Position;
 }
 
@@ -108,6 +109,8 @@ export interface ICompleteTextAreaWrapper extends ITextAreaWrapper {
 	readonly onFocus: Event<FocusEvent>;
 	readonly onBlur: Event<FocusEvent>;
 	readonly onSyntheticTap: Event<void>;
+
+	readonly ownerDocument: Document;
 
 	setIgnoreSelectionChangeTime(reason: string): void;
 	getIgnoreSelectionChangeTime(): number;
@@ -193,6 +196,11 @@ export class TextAreaInput extends Disposable {
 	private readonly _asyncFocusGainWriteScreenReaderContent: RunOnceScheduler;
 
 	private _textAreaState: TextAreaState;
+
+	public get textAreaState(): TextAreaState {
+		return this._textAreaState;
+	}
+
 	private _selectionChangeListener: IDisposable | null;
 
 	private _hasFocus: boolean;
@@ -296,7 +304,7 @@ export class TextAreaInput extends Disposable {
 				// For example, if the cursor is in the middle of a word like Mic|osoft
 				// and Microsoft is chosen from the keyboard's suggestions, the e.data will contain "Microsoft".
 				// This is not really usable because it doesn't tell us where the edit began and where it ended.
-				const newState = TextAreaState.readFromTextArea(this._textArea);
+				const newState = TextAreaState.readFromTextArea(this._textArea, this._textAreaState);
 				const typeInput = TextAreaState.deduceAndroidCompositionInput(this._textAreaState, newState);
 				this._textAreaState = newState;
 				this._onType.fire(typeInput);
@@ -304,7 +312,7 @@ export class TextAreaInput extends Disposable {
 				return;
 			}
 			const typeInput = currentComposition.handleCompositionUpdate(e.data);
-			this._textAreaState = TextAreaState.readFromTextArea(this._textArea);
+			this._textAreaState = TextAreaState.readFromTextArea(this._textArea, this._textAreaState);
 			this._onType.fire(typeInput);
 			this._onCompositionUpdate.fire(e);
 		}));
@@ -326,7 +334,7 @@ export class TextAreaInput extends Disposable {
 				// For example, if the cursor is in the middle of a word like Mic|osoft
 				// and Microsoft is chosen from the keyboard's suggestions, the e.data will contain "Microsoft".
 				// This is not really usable because it doesn't tell us where the edit began and where it ended.
-				const newState = TextAreaState.readFromTextArea(this._textArea);
+				const newState = TextAreaState.readFromTextArea(this._textArea, this._textAreaState);
 				const typeInput = TextAreaState.deduceAndroidCompositionInput(this._textAreaState, newState);
 				this._textAreaState = newState;
 				this._onType.fire(typeInput);
@@ -335,7 +343,7 @@ export class TextAreaInput extends Disposable {
 			}
 
 			const typeInput = currentComposition.handleCompositionUpdate(e.data);
-			this._textAreaState = TextAreaState.readFromTextArea(this._textArea);
+			this._textAreaState = TextAreaState.readFromTextArea(this._textArea, this._textAreaState);
 			this._onType.fire(typeInput);
 			this._onCompositionEnd.fire();
 		}));
@@ -353,12 +361,18 @@ export class TextAreaInput extends Disposable {
 				return;
 			}
 
-			const newState = TextAreaState.readFromTextArea(this._textArea);
+			const newState = TextAreaState.readFromTextArea(this._textArea, this._textAreaState);
 			const typeInput = TextAreaState.deduceInput(this._textAreaState, newState, /*couldBeEmojiInput*/this._OS === OperatingSystem.Macintosh);
 
-			if (typeInput.replacePrevCharCnt === 0 && typeInput.text.length === 1 && strings.isHighSurrogate(typeInput.text.charCodeAt(0))) {
-				// Ignore invalid input but keep it around for next time
-				return;
+			if (typeInput.replacePrevCharCnt === 0 && typeInput.text.length === 1) {
+				// one character was typed
+				if (
+					strings.isHighSurrogate(typeInput.text.charCodeAt(0))
+					|| typeInput.text.charCodeAt(0) === 0x7f /* Delete */
+				) {
+					// Ignore invalid input but keep it around for next time
+					return;
+				}
 			}
 
 			this._textAreaState = newState;
@@ -459,7 +473,7 @@ export class TextAreaInput extends Disposable {
 
 	_initializeFromTest(): void {
 		this._hasFocus = true;
-		this._textAreaState = TextAreaState.readFromTextArea(this._textArea);
+		this._textAreaState = TextAreaState.readFromTextArea(this._textArea, null);
 	}
 
 	private _installSelectionChangeListener(): IDisposable {
@@ -482,7 +496,9 @@ export class TextAreaInput extends Disposable {
 		// `selectionchange` events often come multiple times for a single logical change
 		// so throttle multiple `selectionchange` events that burst in a short period of time.
 		let previousSelectionChangeEventTime = 0;
-		return dom.addDisposableListener(document, 'selectionchange', (e) => {
+		return dom.addDisposableListener(this._textArea.ownerDocument, 'selectionchange', (e) => {//todo
+			inputLatency.onSelectionChange();
+
 			if (!this._hasFocus) {
 				return;
 			}
@@ -512,7 +528,7 @@ export class TextAreaInput extends Disposable {
 				return;
 			}
 
-			if (!this._textAreaState.selectionStartPosition || !this._textAreaState.selectionEndPosition) {
+			if (!this._textAreaState.selection) {
 				// Cannot correlate a position in the textarea with a position in the editor...
 				return;
 			}
@@ -611,7 +627,7 @@ export class TextAreaInput extends Disposable {
 			return;
 		}
 
-		this._setAndWriteTextAreaState(reason, this._host.getScreenReaderContent(this._textAreaState));
+		this._setAndWriteTextAreaState(reason, this._host.getScreenReaderContent());
 	}
 
 	private _ensureClipboardGetsEditorSelection(e: ClipboardEvent): void {
@@ -636,9 +652,9 @@ export class TextAreaInput extends Disposable {
 	}
 }
 
-class ClipboardEventUtils {
+export const ClipboardEventUtils = {
 
-	public static getTextData(clipboardData: DataTransfer): [string, ClipboardStoredMetadata | null] {
+	getTextData(clipboardData: DataTransfer): [string, ClipboardStoredMetadata | null] {
 		const text = clipboardData.getData(Mimes.text);
 		let metadata: ClipboardStoredMetadata | null = null;
 		const rawmetadata = clipboardData.getData('vscode-editor-data');
@@ -660,16 +676,16 @@ class ClipboardEventUtils {
 		}
 
 		return [text, metadata];
-	}
+	},
 
-	public static setTextData(clipboardData: DataTransfer, text: string, html: string | null | undefined, metadata: ClipboardStoredMetadata): void {
+	setTextData(clipboardData: DataTransfer, text: string, html: string | null | undefined, metadata: ClipboardStoredMetadata): void {
 		clipboardData.setData(Mimes.text, text);
 		if (typeof html === 'string') {
 			clipboardData.setData('text/html', html);
 		}
 		clipboardData.setData('vscode-editor-data', JSON.stringify(metadata));
 	}
-}
+};
 
 export class TextAreaWrapper extends Disposable implements ICompleteTextAreaWrapper {
 
@@ -687,6 +703,10 @@ export class TextAreaWrapper extends Disposable implements ICompleteTextAreaWrap
 	public readonly onFocus = this._register(new DomEmitter(this._actual, 'focus')).event;
 	public readonly onBlur = this._register(new DomEmitter(this._actual, 'blur')).event;
 
+	public get ownerDocument(): Document {
+		return this._actual.ownerDocument;
+	}
+
 	private _onSyntheticTap = this._register(new Emitter<void>());
 	public readonly onSyntheticTap: Event<void> = this._onSyntheticTap.event;
 
@@ -698,6 +718,11 @@ export class TextAreaWrapper extends Disposable implements ICompleteTextAreaWrap
 		super();
 		this._ignoreSelectionChangeTime = 0;
 
+		this._register(this.onKeyDown(() => inputLatency.onKeyDown()));
+		this._register(this.onBeforeInput(() => inputLatency.onBeforeInput()));
+		this._register(this.onInput(() => inputLatency.onInput()));
+		this._register(this.onKeyUp(() => inputLatency.onKeyUp()));
+
 		this._register(dom.addDisposableListener(this._actual, TextAreaSyntethicEvents.Tap, () => this._onSyntheticTap.fire()));
 	}
 
@@ -705,8 +730,8 @@ export class TextAreaWrapper extends Disposable implements ICompleteTextAreaWrap
 		const shadowRoot = dom.getShadowRoot(this._actual);
 		if (shadowRoot) {
 			return shadowRoot.activeElement === this._actual;
-		} else if (dom.isInDOM(this._actual)) {
-			return document.activeElement === this._actual;
+		} else if (this._actual.isConnected) {
+			return this._actual.ownerDocument.activeElement === this._actual;
 		} else {
 			return false;
 		}
@@ -756,7 +781,7 @@ export class TextAreaWrapper extends Disposable implements ICompleteTextAreaWrap
 		if (shadowRoot) {
 			activeElement = shadowRoot.activeElement;
 		} else {
-			activeElement = document.activeElement;
+			activeElement = textArea.ownerDocument.activeElement;
 		}
 
 		const currentIsFocused = (activeElement === textArea);

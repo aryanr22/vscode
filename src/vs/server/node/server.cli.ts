@@ -12,7 +12,7 @@ import { cwd } from 'vs/base/common/process';
 import { dirname, extname, resolve, join } from 'vs/base/common/path';
 import { parseArgs, buildHelpMessage, buildVersionMessage, OPTIONS, OptionDescriptions, ErrorReporter } from 'vs/platform/environment/node/argv';
 import { NativeParsedArgs } from 'vs/platform/environment/common/argv';
-import { createWaitMarkerFile } from 'vs/platform/environment/node/wait';
+import { createWaitMarkerFileSync } from 'vs/platform/environment/node/wait';
 import { PipeCommand } from 'vs/workbench/api/node/extHostCLIServer';
 import { hasStdinWithoutTty, getStdinFilePath, readFromStdin } from 'vs/platform/environment/node/stdin';
 
@@ -86,7 +86,6 @@ const cliCommandCwd = process.env['VSCODE_CLIENT_COMMAND_CWD'] as string;
 const cliRemoteAuthority = process.env['VSCODE_CLI_AUTHORITY'] as string;
 const cliStdInFilePath = process.env['VSCODE_STDIN_FILE_PATH'] as string;
 
-
 export async function main(desc: ProductDescription, args: string[]): Promise<void> {
 	if (!cliPipe && !cliCommand) {
 		console.log('Command is only available in WSL or inside a Visual Studio Code terminal.');
@@ -94,7 +93,7 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 	}
 
 	// take the local options and remove the ones that don't apply
-	const options: OptionDescriptions<RemoteParsedArgs> = { ...OPTIONS };
+	const options: OptionDescriptions<Required<RemoteParsedArgs>> = { ...OPTIONS, gitCredential: { type: 'string' }, openExternal: { type: 'boolean' } };
 	const isSupported = cliCommand ? isSupportedForCmd : isSupportedForPipe;
 	for (const optionId in OPTIONS) {
 		const optId = <keyof RemoteParsedArgs>optionId;
@@ -145,7 +144,7 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 			// Usage: `[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"`
 			case 'zsh': file = 'shellIntegration-rc.zsh'; break;
 			// Usage: `string match -q "$TERM_PROGRAM" "vscode"; and . (code --locate-shell-integration-path fish)`
-			case 'fish': file = 'shellIntegration-fish.fish'; break;
+			case 'fish': file = 'fish_xdg_data/fish/vendor_conf.d/shellIntegration.fish'; break;
 			default: throw new Error('Error using --locate-shell-integration-path: Invalid shell type');
 		}
 		console.log(resolve(__dirname, '../..', 'workbench', 'contrib', 'terminal', 'browser', 'media', file));
@@ -181,7 +180,7 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 
 	parsedArgs['_'] = [];
 
-	if (hasReadStdinArg && fileURIs.length === 0 && folderURIs.length === 0 && hasStdinWithoutTty()) {
+	if (hasReadStdinArg && hasStdinWithoutTty()) {
 		try {
 			let stdinFilePath = cliStdInFilePath;
 			if (!stdinFilePath) {
@@ -271,7 +270,16 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 			if (verbose) {
 				console.log(`Invoking: cd "${cliCwd}" && ELECTRON_RUN_AS_NODE=1 "${cliCommand}" "${newCommandline.join('" "')}"`);
 			}
-			_cp.spawn(cliCommand, newCommandline, { cwd: cliCwd, env, stdio: ['inherit'] });
+			if (runningInWSL2()) {
+				if (verbose) {
+					console.log(`Using pipes for output.`);
+				}
+				const cp = _cp.spawn(cliCommand, newCommandline, { cwd: cliCwd, env, stdio: ['inherit', 'pipe', 'pipe'] });
+				cp.stdout.on('data', data => process.stdout.write(data));
+				cp.stderr.on('data', data => process.stderr.write(data));
+			} else {
+				_cp.spawn(cliCommand, newCommandline, { cwd: cliCwd, env, stdio: 'inherit' });
+			}
 		}
 	} else {
 		if (parsedArgs.status) {
@@ -306,7 +314,7 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 				console.log('At least one file must be provided to wait for.');
 				return;
 			}
-			waitMarkerFilePath = createWaitMarkerFile(verbose);
+			waitMarkerFilePath = createWaitMarkerFileSync(verbose);
 		}
 
 		sendToPipe({
@@ -329,6 +337,17 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 			waitForFileDeleted(waitMarkerFilePath);
 		}
 	}
+}
+
+function runningInWSL2(): boolean {
+	if (!!process.env['WSL_DISTRO_NAME']) {
+		try {
+			return _cp.execSync('uname -r', { encoding: 'utf8' }).includes('-microsoft-');
+		} catch (_e) {
+			// Ignore
+		}
+	}
+	return false;
 }
 
 async function waitForFileDeleted(path: string) {

@@ -8,15 +8,20 @@ import { Disposable, dispose, IDisposable, toDisposable } from 'vs/base/common/l
 import { TerminalCapabilityStore } from 'vs/platform/terminal/common/capabilities/terminalCapabilityStore';
 import { CommandDetectionCapability } from 'vs/platform/terminal/common/capabilities/commandDetectionCapability';
 import { CwdDetectionCapability } from 'vs/platform/terminal/common/capabilities/cwdDetectionCapability';
-import { ICommandDetectionCapability, ICwdDetectionCapability, TerminalCapability } from 'vs/platform/terminal/common/capabilities/capabilities';
+import { IBufferMarkCapability, ICommandDetectionCapability, ICwdDetectionCapability, ISerializedCommandDetectionCapability, TerminalCapability } from 'vs/platform/terminal/common/capabilities/capabilities';
 import { PartialCommandDetectionCapability } from 'vs/platform/terminal/common/capabilities/partialCommandDetectionCapability';
 import { ILogService } from 'vs/platform/log/common/log';
 // Importing types is safe in any layer
-// eslint-disable-next-line code-import-patterns
-import type { ITerminalAddon, Terminal } from 'xterm-headless';
-import { ISerializedCommandDetectionCapability } from 'vs/platform/terminal/common/terminalProcess';
+// eslint-disable-next-line local/code-import-patterns
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Emitter } from 'vs/base/common/event';
+import { BufferMarkCapability } from 'vs/platform/terminal/common/capabilities/bufferMarkCapability';
+// Importing types is safe in any layer
+// eslint-disable-next-line local/code-import-patterns
+import type { ITerminalAddon, Terminal } from 'xterm-headless';
+import { URI } from 'vs/base/common/uri';
+import { sanitizeCwd } from 'vs/platform/terminal/common/terminalEnvironment';
+
 
 /**
  * Shell integration is a feature that enhances the terminal's understanding of what's happening
@@ -48,7 +53,9 @@ const enum ShellIntegrationOscPs {
 	/**
 	 * Sequences pioneered by iTerm.
 	 */
-	ITerm = 1337
+	ITerm = 1337,
+	SetCwd = 7,
+	SetWindowsFriendlyCwd = 9
 }
 
 /**
@@ -104,6 +111,11 @@ const enum VSCodeOscPt {
 	 * "\n" -> "\x0a"
 	 * ";"  -> "\x3b"
 	 * ```
+	 *
+	 * An optional nonce can be provided which is may be required by the terminal in order enable
+	 * some features. This helps ensure no malicious command injection has occurred.
+	 *
+	 * Format: `OSC 633 ; E [; <CommandLine> [; <Nonce>]] ST`.
 	 */
 	CommandLine = 'E',
 
@@ -148,7 +160,16 @@ const enum VSCodeOscPt {
 	 *
 	 * WARNING: Any other properties may be changed and are not guaranteed to work in the future.
 	 */
-	Property = 'P'
+	Property = 'P',
+
+	/**
+	 * Sets a mark/point-of-interest in the buffer. `OSC 633 ; SetMark [; Id=<string>] [; Hidden]`
+	 * `Id` - The identifier of the mark that can be used to reference it
+	 * `Hidden` - When set, the mark will be available to reference internally but will not visible
+	 *
+	 * WARNING: This sequence is unfinalized, DO NOT use this in your shell integration script.
+	 */
+	SetMark = 'SetMark',
 }
 
 /**
@@ -158,7 +179,12 @@ const enum ITermOscPt {
 	/**
 	 * Sets a mark/point-of-interest in the buffer. `OSC 1337 ; SetMark`
 	 */
-	SetMark = 'SetMark'
+	SetMark = 'SetMark',
+
+	/**
+	 * Reports current working directory (CWD). `OSC 1337 ; CurrentDir=<Cwd> ST`
+	 */
+	CurrentDir = 'CurrentDir'
 }
 
 /**
@@ -168,7 +194,7 @@ const enum ITermOscPt {
  */
 export class ShellIntegrationAddon extends Disposable implements IShellIntegration, ITerminalAddon {
 	private _terminal?: Terminal;
-	readonly capabilities = new TerminalCapabilityStore();
+	readonly capabilities = this._register(new TerminalCapabilityStore());
 	private _hasUpdatedTelemetry: boolean = false;
 	private _activationTimeout: any;
 	private _commonProtocolDisposables: IDisposable[] = [];
@@ -180,9 +206,10 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 	readonly onDidChangeStatus = this._onDidChangeStatus.event;
 
 	constructor(
+		private _nonce: string,
 		private readonly _disableTelemetry: boolean | undefined,
 		private readonly _telemetryService: ITelemetryService | undefined,
-		@ILogService private readonly _logService: ILogService
+		private readonly _logService: ILogService
 	) {
 		super();
 		this._register(toDisposable(() => {
@@ -198,13 +225,19 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 
 	activate(xterm: Terminal) {
 		this._terminal = xterm;
-		this.capabilities.add(TerminalCapability.PartialCommandDetection, new PartialCommandDetectionCapability(this._terminal));
+		this.capabilities.add(TerminalCapability.PartialCommandDetection, this._register(new PartialCommandDetectionCapability(this._terminal)));
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.VSCode, data => this._handleVSCodeSequence(data)));
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.ITerm, data => this._doHandleITermSequence(data)));
 		this._commonProtocolDisposables.push(
 			xterm.parser.registerOscHandler(ShellIntegrationOscPs.FinalTerm, data => this._handleFinalTermSequence(data))
 		);
+		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.SetCwd, data => this._doHandleSetCwd(data)));
+		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.SetWindowsFriendlyCwd, data => this._doHandleSetWindowsFriendlyCwd(data)));
 		this._ensureCapabilitiesOrAddFailureTelemetry();
+	}
+
+	getMarkerId(terminal: Terminal, vscodeMarkerId: string) {
+		this._createOrGetBufferMarkDetection(terminal).getMark(vscodeMarkerId);
 	}
 
 	private _handleFinalTermSequence(data: string): boolean {
@@ -287,8 +320,11 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 		}
 
 		// Pass the sequence along to the capability
-		const [command, ...args] = data.split(';');
-		switch (command) {
+		const argsIndex = data.indexOf(';');
+		const sequenceCommand = argsIndex === -1 ? data : data.substring(0, argsIndex);
+		// Cast to strict checked index access
+		const args: (string | undefined)[] = argsIndex === -1 ? [] : data.substring(argsIndex + 1).split(';');
+		switch (sequenceCommand) {
 			case VSCodeOscPt.PromptStart:
 				this._createOrGetCommandDetection(this._terminal).handlePromptStart();
 				return true;
@@ -299,18 +335,21 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 				this._createOrGetCommandDetection(this._terminal).handleCommandExecuted();
 				return true;
 			case VSCodeOscPt.CommandFinished: {
-				const exitCode = args.length === 1 ? parseInt(args[0]) : undefined;
+				const arg0 = args[0];
+				const exitCode = arg0 !== undefined ? parseInt(arg0) : undefined;
 				this._createOrGetCommandDetection(this._terminal).handleCommandFinished(exitCode);
 				return true;
 			}
 			case VSCodeOscPt.CommandLine: {
+				const arg0 = args[0];
+				const arg1 = args[1];
 				let commandLine: string;
-				if (args.length === 1) {
-					commandLine = this._deserializeMessage(args[0]);
+				if (arg0 !== undefined) {
+					commandLine = deserializeMessage(arg0);
 				} else {
 					commandLine = '';
 				}
-				this._createOrGetCommandDetection(this._terminal).setCommandLine(commandLine);
+				this._createOrGetCommandDetection(this._terminal).setCommandLine(commandLine, arg1 === this._nonce);
 				return true;
 			}
 			case VSCodeOscPt.ContinuationStart: {
@@ -330,20 +369,15 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 				return true;
 			}
 			case VSCodeOscPt.Property: {
-				const [key, rawValue] = args[0].split('=');
-				if (rawValue === undefined) {
+				const arg0 = args[0];
+				const deserialized = arg0 !== undefined ? deserializeMessage(arg0) : '';
+				const { key, value } = parseKeyValueAssignment(deserialized);
+				if (value === undefined) {
 					return true;
 				}
-				const value = this._deserializeMessage(rawValue);
 				switch (key) {
 					case 'Cwd': {
-						// TODO: Ideally we would also support the following to supplement our own:
-						//       - OSC 1337 ; CurrentDir=<Cwd> ST (iTerm)
-						//       - OSC 7 ; scheme://cwd ST        (Unknown origin)
-						//       - OSC 9 ; 9 ; <cwd> ST           (cmder)
-						this._createOrGetCwdDetection().updateCwd(value);
-						const commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
-						commandDetection?.setCwd(value);
+						this._updateCwd(value);
 						return true;
 					}
 					case 'IsWindows': {
@@ -351,14 +385,27 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 						return true;
 					}
 					case 'Task': {
+						this._createOrGetBufferMarkDetection(this._terminal);
 						this.capabilities.get(TerminalCapability.CommandDetection)?.setIsCommandStorageDisabled();
+						return true;
 					}
 				}
+			}
+			case VSCodeOscPt.SetMark: {
+				this._createOrGetBufferMarkDetection(this._terminal).addMark(parseMarkSequence(args));
+				return true;
 			}
 		}
 
 		// Unrecognized sequence
 		return false;
+	}
+
+	private _updateCwd(value: string) {
+		value = sanitizeCwd(value);
+		this._createOrGetCwdDetection().updateCwd(value);
+		const commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
+		commandDetection?.setCwd(value);
 	}
 
 	private _doHandleITermSequence(data: string): boolean {
@@ -369,9 +416,69 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 		const [command] = data.split(';');
 		switch (command) {
 			case ITermOscPt.SetMark: {
-				this._createOrGetCommandDetection(this._terminal).handleGenericCommand({ genericMarkProperties: { disableCommandStorage: true } });
+				this._createOrGetBufferMarkDetection(this._terminal).addMark();
+			}
+			default: {
+				// Checking for known `<key>=<value>` pairs.
+				// Note that unlike `VSCodeOscPt.Property`, iTerm2 does not interpret backslash or hex-escape sequences.
+				// See: https://github.com/gnachman/iTerm2/blob/bb0882332cec5196e4de4a4225978d746e935279/sources/VT100Terminal.m#L2089-L2105
+				const { key, value } = parseKeyValueAssignment(command);
+
+				if (value === undefined) {
+					// No '=' was found, so it's not a property assignment.
+					return true;
+				}
+
+				switch (key) {
+					case ITermOscPt.CurrentDir:
+						// Encountered: `OSC 1337 ; CurrentDir=<Cwd> ST`
+						this._updateCwd(value);
+						return true;
+				}
 			}
 		}
+
+		// Unrecognized sequence
+		return false;
+	}
+
+	private _doHandleSetWindowsFriendlyCwd(data: string): boolean {
+		if (!this._terminal) {
+			return false;
+		}
+
+		const [command, ...args] = data.split(';');
+		switch (command) {
+			case '9':
+				// Encountered `OSC 9 ; 9 ; <cwd> ST`
+				if (args.length) {
+					this._updateCwd(args[0]);
+				}
+				return true;
+		}
+
+		// Unrecognized sequence
+		return false;
+	}
+
+	/**
+	 * Handles the sequence: `OSC 7 ; scheme://cwd ST`
+	 */
+	private _doHandleSetCwd(data: string): boolean {
+		if (!this._terminal) {
+			return false;
+		}
+
+		const [command] = data.split(';');
+
+		if (command.match(/^file:\/\/.*\//)) {
+			const uri = URI.parse(command);
+			if (uri.path && uri.path.length > 0) {
+				this._updateCwd(uri.path);
+				return true;
+			}
+		}
+
 		// Unrecognized sequence
 		return false;
 	}
@@ -397,7 +504,7 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 	protected _createOrGetCwdDetection(): ICwdDetectionCapability {
 		let cwdDetection = this.capabilities.get(TerminalCapability.CwdDetection);
 		if (!cwdDetection) {
-			cwdDetection = new CwdDetectionCapability();
+			cwdDetection = this._register(new CwdDetectionCapability());
 			this.capabilities.add(TerminalCapability.CwdDetection, cwdDetection);
 		}
 		return cwdDetection;
@@ -406,22 +513,57 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 	protected _createOrGetCommandDetection(terminal: Terminal): ICommandDetectionCapability {
 		let commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
 		if (!commandDetection) {
-			commandDetection = new CommandDetectionCapability(terminal, this._logService);
+			commandDetection = this._register(new CommandDetectionCapability(terminal, this._logService));
 			this.capabilities.add(TerminalCapability.CommandDetection, commandDetection);
 		}
 		return commandDetection;
 	}
 
-	private _deserializeMessage(message: string): string {
-		let result = message.replace(/\\\\/g, '\\');
-		const deserializeRegex = /\\x([0-9a-f]{2})/i;
-		while (true) {
-			const match = result.match(deserializeRegex);
-			if (!match?.index || match.length < 2) {
-				break;
-			}
-			result = result.slice(0, match.index) + String.fromCharCode(parseInt(match[1], 16)) + result.slice(match.index + 4);
+	protected _createOrGetBufferMarkDetection(terminal: Terminal): IBufferMarkCapability {
+		let bufferMarkDetection = this.capabilities.get(TerminalCapability.BufferMarkDetection);
+		if (!bufferMarkDetection) {
+			bufferMarkDetection = this._register(new BufferMarkCapability(terminal));
+			this.capabilities.add(TerminalCapability.BufferMarkDetection, bufferMarkDetection);
 		}
-		return result;
+		return bufferMarkDetection;
 	}
+}
+
+export function deserializeMessage(message: string): string {
+	return message.replaceAll(
+		// Backslash ('\') followed by an escape operator: either another '\', or 'x' and two hex chars.
+		/\\(\\|x([0-9a-f]{2}))/gi,
+		// If it's a hex value, parse it to a character.
+		// Otherwise the operator is '\', which we return literally, now unescaped.
+		(_match: string, op: string, hex?: string) => hex ? String.fromCharCode(parseInt(hex, 16)) : op);
+}
+
+export function parseKeyValueAssignment(message: string): { key: string; value: string | undefined } {
+	const separatorIndex = message.indexOf('=');
+	if (separatorIndex === -1) {
+		return { key: message, value: undefined }; // No '=' was found.
+	}
+	return {
+		key: message.substring(0, separatorIndex),
+		value: message.substring(1 + separatorIndex)
+	};
+}
+
+
+export function parseMarkSequence(sequence: (string | undefined)[]): { id?: string; hidden?: boolean } {
+	let id = undefined;
+	let hidden = false;
+	for (const property of sequence) {
+		// Sanity check, this shouldn't happen in practice
+		if (property === undefined) {
+			continue;
+		}
+		if (property === 'Hidden') {
+			hidden = true;
+		}
+		if (property.startsWith('Id=')) {
+			id = property.substring(3);
+		}
+	}
+	return { id, hidden };
 }

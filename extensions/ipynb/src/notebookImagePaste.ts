@@ -4,101 +4,204 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { JUPYTER_NOTEBOOK_MARKDOWN_SELECTOR } from './constants';
+import { basename, extname } from 'path';
 
-class CopyPasteEditProvider implements vscode.DocumentPasteEditProvider {
+enum MimeType {
+	bmp = 'image/bmp',
+	gif = 'image/gif',
+	ico = 'image/ico',
+	jpeg = 'image/jpeg',
+	png = 'image/png',
+	tiff = 'image/tiff',
+	webp = 'image/webp',
+	plain = 'text/plain',
+	uriList = 'text/uri-list',
+}
+
+const imageMimeTypes: ReadonlySet<string> = new Set<string>([
+	MimeType.bmp,
+	MimeType.gif,
+	MimeType.ico,
+	MimeType.jpeg,
+	MimeType.png,
+	MimeType.tiff,
+	MimeType.webp,
+]);
+
+const imageExtToMime: ReadonlyMap<string, string> = new Map<string, string>([
+	['.bmp', MimeType.bmp],
+	['.gif', MimeType.gif],
+	['.ico', MimeType.ico],
+	['.jpe', MimeType.jpeg],
+	['.jpeg', MimeType.jpeg],
+	['.jpg', MimeType.jpeg],
+	['.png', MimeType.png],
+	['.tif', MimeType.tiff],
+	['.tiff', MimeType.tiff],
+	['.webp', MimeType.webp],
+]);
+
+function getImageMimeType(uri: vscode.Uri): string | undefined {
+	return imageExtToMime.get(extname(uri.fsPath).toLowerCase());
+}
+
+class DropOrPasteEditProvider implements vscode.DocumentPasteEditProvider, vscode.DocumentDropEditProvider {
+
+	public readonly id = 'insertAttachment';
 
 	async provideDocumentPasteEdits(
-		_document: vscode.TextDocument,
+		document: vscode.TextDocument,
 		_ranges: readonly vscode.Range[],
 		dataTransfer: vscode.DataTransfer,
-		_token: vscode.CancellationToken
+		token: vscode.CancellationToken,
 	): Promise<vscode.DocumentPasteEdit | undefined> {
-
-		const enabled = vscode.workspace.getConfiguration('ipynb', _document).get('experimental.pasteImages.enabled', false);
+		const enabled = vscode.workspace.getConfiguration('ipynb', document).get('pasteImagesAsAttachments.enabled', true);
 		if (!enabled) {
-			return undefined;
+			return;
 		}
 
-		// get b64 data from paste
-		// TODO: dataTransfer.get() limits to one image pasted
-		const dataItem = dataTransfer.get('image/png');
-		if (!dataItem) {
-			return undefined;
-		}
-		const fileDataAsUint8 = await dataItem.asFile()?.data();
-		if (!fileDataAsUint8) {
-			return undefined;
+		const insert = await this.createInsertImageAttachmentEdit(document, dataTransfer, token);
+		if (!insert) {
+			return;
 		}
 
-		// get filename data from paste
-		let pasteFilename = dataItem.asFile()?.name;
-		if (!pasteFilename) {
-			return undefined;
-		}
-		const separatorIndex = pasteFilename?.lastIndexOf('.');
-		const filename = pasteFilename?.slice(0, separatorIndex);
-		const filetype = pasteFilename?.slice(separatorIndex);
-		if (!filename || !filetype) {
-			return undefined;
+		const pasteEdit = new vscode.DocumentPasteEdit(insert.insertText, vscode.l10n.t('Insert Image as Attachment'));
+		pasteEdit.yieldTo = [{ mimeType: MimeType.plain }];
+		pasteEdit.additionalEdit = insert.additionalEdit;
+		return pasteEdit;
+	}
+
+	async provideDocumentDropEdits(
+		document: vscode.TextDocument,
+		_position: vscode.Position,
+		dataTransfer: vscode.DataTransfer,
+		token: vscode.CancellationToken,
+	): Promise<vscode.DocumentDropEdit | undefined> {
+		const insert = await this.createInsertImageAttachmentEdit(document, dataTransfer, token);
+		if (!insert) {
+			return;
 		}
 
-		// get notebook cell data
-		let notebookUri;
-		let currentCell;
-		for (const notebook of vscode.workspace.notebookDocuments) {
-			if (notebook.uri.path === _document.uri.path) {
-				for (const cell of notebook.getCells()) {
-					if (cell.document === _document) {
-						currentCell = cell;
-						notebookUri = notebook.uri;
-						break;
-					}
-				}
-			}
+		const dropEdit = new vscode.DocumentDropEdit(insert.insertText);
+		dropEdit.yieldTo = [{ mimeType: MimeType.plain }];
+		dropEdit.additionalEdit = insert.additionalEdit;
+		dropEdit.label = vscode.l10n.t('Insert Image as Attachment');
+		return dropEdit;
+	}
+
+	private async createInsertImageAttachmentEdit(
+		document: vscode.TextDocument,
+		dataTransfer: vscode.DataTransfer,
+		token: vscode.CancellationToken,
+	): Promise<{ insertText: vscode.SnippetString; additionalEdit: vscode.WorkspaceEdit } | undefined> {
+		const imageData = await getDroppedImageData(dataTransfer, token);
+		if (!imageData.length || token.isCancellationRequested) {
+			return;
 		}
-		if (!currentCell || !notebookUri) {
+
+		const currentCell = getCellFromCellDocument(document);
+		if (!currentCell) {
 			return undefined;
 		}
 
 		// create updated metadata for cell (prep for WorkspaceEdit)
-		const b64string = encodeBase64(fileDataAsUint8);
-		const startingAttachments = currentCell.metadata?.custom?.attachments;
-		if (!startingAttachments) {
-			currentCell.metadata.custom['attachments'] = { [pasteFilename]: { 'image/png': b64string } };
-		} else {
-			for (let appendValue = 2; pasteFilename in startingAttachments; appendValue++) {
-				const objEntries = Object.entries(startingAttachments[pasteFilename]);
-				if (objEntries.length) { // check that mime:b64 are present
-					const [, attachmentb64] = objEntries[0];
-					if (attachmentb64 !== b64string) {	// append a "-#" here. same name, diff data. this matches jupyter behavior
-						pasteFilename = filename.concat(`-${appendValue}`) + filetype;
-					}
-				}
-			}
-			currentCell.metadata.custom.attachments[pasteFilename] = { 'image/png': b64string };
+		const newAttachment = buildAttachment(currentCell, imageData);
+		if (!newAttachment) {
+			return;
 		}
 
-		const metadataNotebookEdit = vscode.NotebookEdit.updateCellMetadata(currentCell.index, currentCell.metadata);
-		const workspaceEdit = new vscode.WorkspaceEdit();
-		if (metadataNotebookEdit) {
-			workspaceEdit.set(notebookUri, [metadataNotebookEdit]);
-		}
+		// build edits
+		const additionalEdit = new vscode.WorkspaceEdit();
+		const nbEdit = vscode.NotebookEdit.updateCellMetadata(currentCell.index, newAttachment.metadata);
+		const notebookUri = currentCell.notebook.uri;
+		additionalEdit.set(notebookUri, [nbEdit]);
 
 		// create a snippet for paste
-		const pasteSnippet = new vscode.SnippetString();
-		pasteSnippet.appendText('![');
-		pasteSnippet.appendPlaceholder(`${pasteFilename}`);
-		pasteSnippet.appendText(`](attachment:${pasteFilename})`);
+		const insertText = new vscode.SnippetString();
+		newAttachment.filenames.forEach((filename, i) => {
+			insertText.appendText('![');
+			insertText.appendPlaceholder(`${filename}`);
+			insertText.appendText(`](${/\s/.test(filename) ? `<attachment:${filename}>` : `attachment:${filename}`})`);
+			if (i !== newAttachment.filenames.length - 1) {
+				insertText.appendText(' ');
+			}
+		});
 
-		return { insertText: pasteSnippet, additionalEdit: workspaceEdit };
+		return { insertText, additionalEdit };
 	}
 }
 
-export function imagePasteSetup() {
-	const selector: vscode.DocumentSelector = { notebookType: 'jupyter-notebook', language: 'markdown' }; // this is correct provider
-	return vscode.languages.registerDocumentPasteEditProvider(selector, new CopyPasteEditProvider(), {
-		pasteMimeTypes: ['image/png'],
-	});
+async function getDroppedImageData(
+	dataTransfer: vscode.DataTransfer,
+	token: vscode.CancellationToken,
+): Promise<readonly ImageAttachmentData[]> {
+
+	// Prefer using image data in the clipboard
+	const files = coalesce(await Promise.all(Array.from(dataTransfer, async ([mimeType, item]): Promise<ImageAttachmentData | undefined> => {
+		if (!imageMimeTypes.has(mimeType)) {
+			return;
+		}
+
+		const file = item.asFile();
+		if (!file) {
+			return;
+		}
+
+		const data = await file.data();
+		return { fileName: file.name, mimeType, data };
+	})));
+	if (files.length) {
+		return files;
+	}
+
+	// Then fallback to image files in the uri-list
+	const urlList = await dataTransfer.get('text/uri-list')?.asString();
+	if (token.isCancellationRequested) {
+		return [];
+	}
+
+	if (urlList) {
+		const uris: vscode.Uri[] = [];
+		for (const resource of urlList.split(/\r?\n/g)) {
+			try {
+				uris.push(vscode.Uri.parse(resource));
+			} catch {
+				// noop
+			}
+		}
+
+		const entries = await Promise.all(uris.map(async (uri) => {
+			const mimeType = getImageMimeType(uri);
+			if (!mimeType) {
+				return;
+			}
+
+			const data = await vscode.workspace.fs.readFile(uri);
+			return { fileName: basename(uri.fsPath), mimeType, data };
+		}));
+
+		return coalesce(entries);
+	}
+
+	return [];
+}
+
+function coalesce<T>(array: ReadonlyArray<T | undefined | null>): T[] {
+	return <T[]>array.filter(e => !!e);
+}
+
+function getCellFromCellDocument(cellDocument: vscode.TextDocument): vscode.NotebookCell | undefined {
+	for (const notebook of vscode.workspace.notebookDocuments) {
+		if (notebook.uri.path === cellDocument.uri.path) {
+			for (const cell of notebook.getCells()) {
+				if (cell.document === cellDocument) {
+					return cell;
+				}
+			}
+		}
+	}
+	return undefined;
 }
 
 /**
@@ -140,4 +243,74 @@ function encodeBase64(buffer: Uint8Array, padded = true, urlSafe = false) {
 	}
 
 	return output;
+}
+
+
+interface ImageAttachmentData {
+	readonly fileName: string;
+	readonly data: Uint8Array;
+	readonly mimeType: string;
+}
+
+function buildAttachment(
+	cell: vscode.NotebookCell,
+	attachments: readonly ImageAttachmentData[],
+): { metadata: { [key: string]: any }; filenames: string[] } | undefined {
+	const cellMetadata = { ...cell.metadata };
+	const tempFilenames: string[] = [];
+	if (!attachments.length) {
+		return undefined;
+	}
+
+	if (!cellMetadata.attachments) {
+		cellMetadata.attachments = {};
+	}
+
+	for (const attachment of attachments) {
+		const b64 = encodeBase64(attachment.data);
+
+		const fileExt = extname(attachment.fileName);
+		const filenameWithoutExt = basename(attachment.fileName, fileExt);
+
+		let tempFilename = filenameWithoutExt + fileExt;
+		for (let appendValue = 2; tempFilename in cellMetadata.attachments; appendValue++) {
+			const objEntries = Object.entries(cellMetadata.attachments[tempFilename]);
+			if (objEntries.length) { // check that mime:b64 are present
+				const [mime, attachmentb64] = objEntries[0];
+				if (mime === attachment.mimeType && attachmentb64 === b64) { // checking if filename can be reused, based on comparison of image data
+					break;
+				} else {
+					tempFilename = filenameWithoutExt.concat(`-${appendValue}`) + fileExt;
+				}
+			}
+		}
+
+		tempFilenames.push(tempFilename);
+		cellMetadata.attachments[tempFilename] = { [attachment.mimeType]: b64 };
+	}
+
+	return {
+		metadata: cellMetadata,
+		filenames: tempFilenames,
+	};
+}
+
+export function notebookImagePasteSetup(): vscode.Disposable {
+	const provider = new DropOrPasteEditProvider();
+	return vscode.Disposable.from(
+		vscode.languages.registerDocumentPasteEditProvider(JUPYTER_NOTEBOOK_MARKDOWN_SELECTOR, provider, {
+			id: provider.id,
+			pasteMimeTypes: [
+				MimeType.png,
+				MimeType.uriList,
+			],
+		}),
+		vscode.languages.registerDocumentDropEditProvider(JUPYTER_NOTEBOOK_MARKDOWN_SELECTOR, provider, {
+			id: provider.id,
+			dropMimeTypes: [
+				...Object.values(imageExtToMime),
+				MimeType.uriList,
+			],
+		})
+	);
 }

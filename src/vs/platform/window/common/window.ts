@@ -11,13 +11,12 @@ import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { NativeParsedArgs } from 'vs/platform/environment/common/argv';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { FileType } from 'vs/platform/files/common/files';
-import { LogLevel } from 'vs/platform/log/common/log';
+import { ILoggerResource, LogLevel } from 'vs/platform/log/common/log';
 import { PolicyDefinition, PolicyValue } from 'vs/platform/policy/common/policy';
 import { IPartsSplash } from 'vs/platform/theme/common/themeService';
 import { IUserDataProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
-import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
+import { IAnyWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 
 export const WindowMinimumSize = {
 	WIDTH: 400,
@@ -55,6 +54,9 @@ export interface IOpenWindowOptions extends IBaseOpenWindowsOptions {
 	readonly gotoLineMode?: boolean;
 
 	readonly waitMarkerFileURI?: URI;
+
+	readonly forceProfile?: string;
+	readonly forceTempProfile?: boolean;
 }
 
 export interface IAddFoldersRequest {
@@ -63,7 +65,7 @@ export interface IAddFoldersRequest {
 
 export interface IOpenedWindow {
 	readonly id: number;
-	readonly workspace?: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier;
+	readonly workspace?: IAnyWorkspaceIdentifier;
 	readonly title: string;
 	readonly filename?: string;
 	readonly dirty: boolean;
@@ -135,7 +137,11 @@ export interface IWindowSettings {
 	readonly enableMenuBarMnemonics: boolean;
 	readonly closeWhenEmpty: boolean;
 	readonly clickThroughInactive: boolean;
-	readonly experimental?: { useSandbox: boolean };
+	readonly density: IDensitySettings;
+}
+
+export interface IDensitySettings {
+	readonly editorTabHeight: 'default' | 'compact';
 }
 
 export function getTitleBarStyle(configurationService: IConfigurationService): 'native' | 'custom' {
@@ -164,21 +170,17 @@ export function getTitleBarStyle(configurationService: IConfigurationService): '
 	return isLinux ? 'native' : 'custom'; // default to custom on all macOS and Windows
 }
 
-export function useWindowControlsOverlay(configurationService: IConfigurationService, environmentService: IEnvironmentService): boolean {
-	if (!isWindows || isWeb || !environmentService.isBuilt) {
-		return false; // only supported on a built desktop windows instance
+export function useWindowControlsOverlay(configurationService: IConfigurationService): boolean {
+	if (!isWindows || isWeb) {
+		return false; // only supported on a desktop Windows instance
 	}
 
 	if (getTitleBarStyle(configurationService) === 'native') {
 		return false; // only supported when title bar is custom
 	}
 
-	const configuredUseWindowControlsOverlay = configurationService.getValue<boolean | undefined>('window.experimental.windowControlsOverlay.enabled');
-	if (typeof configuredUseWindowControlsOverlay === 'boolean') {
-		return configuredUseWindowControlsOverlay;
-	}
-
-	return true; // enabled by default
+	// Default to true.
+	return true;
 }
 
 export interface IPath<T = IEditorOptions> extends IPathData<T> {
@@ -271,6 +273,7 @@ export interface IWindowConfiguration {
 export interface IOSConfiguration {
 	readonly release: string;
 	readonly hostname: string;
+	readonly arch: string;
 }
 
 export interface INativeWindowConfiguration extends IWindowConfiguration, NativeParsedArgs, ISandboxConfiguration {
@@ -282,8 +285,9 @@ export interface INativeWindowConfiguration extends IWindowConfiguration, Native
 	backupPath?: string;
 
 	profiles: {
+		home: UriComponents;
 		all: readonly UriDto<IUserDataProfile>[];
-		current: UriDto<IUserDataProfile>;
+		profile: UriDto<IUserDataProfile>;
 	};
 
 	homeDir: string;
@@ -296,6 +300,10 @@ export interface INativeWindowConfiguration extends IWindowConfiguration, Native
 
 	isInitialStartup?: boolean;
 	logLevel: LogLevel;
+	loggers: {
+		global: UriDto<ILoggerResource>[];
+		window: UriDto<ILoggerResource>[];
+	};
 
 	fullscreen?: boolean;
 	maximized?: boolean;

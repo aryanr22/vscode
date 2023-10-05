@@ -15,7 +15,7 @@ import * as performance from 'vs/base/common/performance';
 
 import 'vs/workbench/api/common/extHost.common.services';
 import 'vs/workbench/api/worker/extHost.worker.services';
-import { FileAccess } from 'vs/base/common/network';
+import { FileAccess, Schemas, VSCODE_AUTHORITY } from 'vs/base/common/network';
 import { URI } from 'vs/base/common/uri';
 
 //#region --- Define, capture, and override some globals
@@ -95,7 +95,7 @@ if ((<any>self).Worker) {
 	const _Worker = (<any>self).Worker;
 	Worker = <any>function (stringUrl: string | URL, options?: WorkerOptions) {
 		if (/^file:/i.test(stringUrl.toString())) {
-			stringUrl = FileAccess.asBrowserUri(URI.parse(stringUrl.toString())).toString(true);
+			stringUrl = FileAccess.uriToBrowserUri(URI.parse(stringUrl.toString())).toString(true);
 		} else if (/^vscode-remote:/i.test(stringUrl.toString())) {
 			// Supporting transformation of vscode-remote URIs requires an async call to the main thread,
 			// but we cannot do this call from within the embedded Worker, and the only way out would be
@@ -109,7 +109,7 @@ if ((<any>self).Worker) {
 		const bootstrapFnSource = (function bootstrapFn(workerUrl: string) {
 			function asWorkerBrowserUrl(url: string | URL | TrustedScriptURL): any {
 				if (typeof url === 'string' || url instanceof URL) {
-					return String(url).replace(/^file:\/\//i, 'vscode-file://vscode-app');
+					return String(url).replace(/^file:\/\//i, `${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`);
 				}
 				return url;
 			}
@@ -158,12 +158,6 @@ const hostUtil = new class implements IHostUtils {
 	public readonly pid = undefined;
 	exit(_code?: number | undefined): void {
 		nativeClose();
-	}
-	async exists(_path: string): Promise<boolean> {
-		return true;
-	}
-	async realpath(path: string): Promise<string> {
-		return path;
 	}
 };
 

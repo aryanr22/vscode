@@ -70,6 +70,23 @@ function calculatePackageDeps(binaryPath: string, arch: DebianArchString, sysroo
 			depsStr = line.substring(shlibsDependsPrefix.length);
 		}
 	}
-	const requires = new Set(depsStr.split(', ').sort());
+	// Refs https://chromium-review.googlesource.com/c/chromium/src/+/3572926
+	// Chromium depends on libgcc_s, is from the package libgcc1.  However, in
+	// Bullseye, the package was renamed to libgcc-s1.  To avoid adding a dep
+	// on the newer package, this hack skips the dep.  This is safe because
+	// libgcc-s1 is a dependency of libc6.  This hack can be removed once
+	// support for Debian Buster and Ubuntu Bionic are dropped.
+	//
+	// Remove kerberos native module related dependencies as the versions
+	// computed from sysroot will not satisfy the minimum supported distros
+	// Refs https://github.com/microsoft/vscode/issues/188881.
+	// TODO(deepak1556): remove this workaround in favor of computing the
+	// versions from build container for native modules.
+	const filteredDeps = depsStr.split(', ').filter(dependency => {
+		return !dependency.startsWith('libgcc-s1') &&
+			!dependency.startsWith('libgssapi-krb5-2') &&
+			!dependency.startsWith('libkrb5-3');
+	}).sort();
+	const requires = new Set(filteredDeps);
 	return requires;
 }

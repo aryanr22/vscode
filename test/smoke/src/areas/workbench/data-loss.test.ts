@@ -10,16 +10,8 @@ import { createApp, timeout, installDiagnosticsHandler, installAppAfterHandler, 
 export function setup(ensureStableCode: () => string | undefined, logger: Logger) {
 	describe('Data Loss (insiders -> insiders)', function () {
 
-		// There are cases where `exitApplication` does not actually
-		// stop the application and our attempt then to `kill` the
-		// process tree results in data loss / state loss. All these
-		// tests here rely on state getting persisted properly, so
-		// until we have figured out the root cause, we retry these
-		// tests.
-		// See: https://github.com/microsoft/vscode/issues/157979
-		if (process.platform === 'darwin') {
-			this.retries(2);
-		}
+		// Double the timeout since these tests involve 2 startups
+		this.timeout(4 * 60 * 1000);
 
 		let app: Application | undefined = undefined;
 
@@ -83,18 +75,18 @@ export function setup(ensureStableCode: () => string | undefined, logger: Logger
 		});
 
 		it('verifies that "hot exit" works for dirty files (without delay)', function () {
-			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_without_delay', undefined);
+			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_without_delay', undefined, undefined);
 		});
 
 		it('verifies that "hot exit" works for dirty files (with delay)', function () {
-			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_with_delay', 2000);
+			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_with_delay', 2000, undefined);
 		});
 
 		it('verifies that auto save triggers on shutdown', function () {
 			return testHotExit.call(this, 'test_verifies_that_auto_save_triggers_on_shutdown', undefined, true);
 		});
 
-		async function testHotExit(title: string, restartDelay: number | undefined, autoSave: boolean | undefined) {
+		async function testHotExit(this: import('mocha').Context, title: string, restartDelay: number | undefined, autoSave: boolean | undefined) {
 			app = createApp({
 				...this.defaultOptions,
 				logsPath: suiteLogsPath(this.defaultOptions, title),
@@ -143,16 +135,8 @@ export function setup(ensureStableCode: () => string | undefined, logger: Logger
 
 	describe('Data Loss (stable -> insiders)', function () {
 
-		// There are cases where `exitApplication` does not actually
-		// stop the application and our attempt then to `kill` the
-		// process tree results in data loss / state loss. All these
-		// tests here rely on state getting persisted properly, so
-		// until we have figured out the root cause, we retry these
-		// tests.
-		// See: https://github.com/microsoft/vscode/issues/157979
-		if (process.platform === 'darwin') {
-			this.retries(2);
-		}
+		// Double the timeout since these tests involve 2 startups
+		this.timeout(4 * 60 * 1000);
 
 		let insidersApp: Application | undefined = undefined;
 		let stableApp: Application | undefined = undefined;
@@ -225,7 +209,7 @@ export function setup(ensureStableCode: () => string | undefined, logger: Logger
 			return testHotExit.call(this, `test_verifies_that_hot_exit_works_for_dirty_files_with_delay_from_stable`, 2000);
 		});
 
-		async function testHotExit(title: string, restartDelay: number | undefined) {
+		async function testHotExit(this: import('mocha').Context, title: string, restartDelay: number | undefined) {
 			const stableCodePath = ensureStableCode();
 			if (!stableCodePath) {
 				this.skip();

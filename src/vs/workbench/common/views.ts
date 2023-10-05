@@ -10,14 +10,13 @@ import { ContextKeyExpression } from 'vs/platform/contextkey/common/contextkey';
 import { localize } from 'vs/nls';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IDisposable, Disposable, toDisposable } from 'vs/base/common/lifecycle';
-import { ThemeIcon } from 'vs/platform/theme/common/themeService';
-import { getOrSet } from 'vs/base/common/map';
+import { ThemeIcon } from 'vs/base/common/themables';
+import { getOrSet, SetMap } from 'vs/base/common/map';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IKeybindings } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { ExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
 import { flatten } from 'vs/base/common/arrays';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
-import { SetMap } from 'vs/base/common/collections';
 import { IProgressIndicator } from 'vs/platform/progress/common/progress';
 import Severity from 'vs/base/common/severity';
 import { IPaneComposite } from 'vs/workbench/common/panecomposite';
@@ -75,7 +74,7 @@ export interface IViewContainerDescriptor {
 	/**
 	 * The title of the view container
 	 */
-	readonly title: ILocalizedString | string;
+	readonly title: ILocalizedString;
 
 	/**
 	 * Icon representation of the View container
@@ -295,21 +294,16 @@ export interface IViewDescriptor {
 	readonly group?: string;
 
 	readonly remoteAuthority?: string | string[];
+	readonly virtualWorkspace?: string;
 
 	readonly openCommandActionDescriptor?: OpenCommandActionDescriptor;
 }
 
-export interface ICustomTreeViewDescriptor extends ITreeViewDescriptor {
+export interface ICustomViewDescriptor extends IViewDescriptor {
 	readonly extensionId: ExtensionIdentifier;
 	readonly originalContainerId: string;
+	readonly treeView?: ITreeView;
 }
-
-export interface ICustomWebviewViewDescriptor extends IViewDescriptor {
-	readonly extensionId: ExtensionIdentifier;
-	readonly originalContainerId: string;
-}
-
-export type ICustomViewDescriptor = ICustomTreeViewDescriptor | ICustomWebviewViewDescriptor;
 
 export interface IViewDescriptorRef {
 	viewDescriptor: IViewDescriptor;
@@ -334,7 +328,7 @@ export interface IViewContainerModel {
 	readonly title: string;
 	readonly icon: ThemeIcon | URI | undefined;
 	readonly keybindingId: string | undefined;
-	readonly onDidChangeContainerInfo: Event<{ title?: boolean; icon?: boolean; keybindingId?: boolean }>;
+	readonly onDidChangeContainerInfo: Event<{ title?: boolean; icon?: boolean; keybindingId?: boolean; badgeEnablement?: boolean }>;
 
 	readonly allViewDescriptors: ReadonlyArray<IViewDescriptor>;
 	readonly onDidChangeAllViewDescriptors: Event<{ added: ReadonlyArray<IViewDescriptor>; removed: ReadonlyArray<IViewDescriptor> }>;
@@ -583,9 +577,11 @@ export interface IViewsService {
 	closeViewContainer(id: string): void;
 	getVisibleViewContainer(location: ViewContainerLocation): ViewContainer | null;
 	getActiveViewPaneContainerWithId(viewContainerId: string): IViewPaneContainer | null;
+	getFocusedViewName(): string;
 
 	// View APIs
 	readonly onDidChangeViewVisibility: Event<{ id: string; visible: boolean }>;
+	readonly onDidChangeFocusedView: Event<void>;
 	isViewVisible(id: string): boolean;
 	openView<T extends IView>(id: string, focus?: boolean): Promise<T | null>;
 	closeView(id: string): void;
@@ -620,6 +616,9 @@ export interface IViewDescriptorService {
 	readonly onDidChangeContainerLocation: Event<{ viewContainer: ViewContainer; from: ViewContainerLocation; to: ViewContainerLocation }>;
 	moveViewContainerToLocation(viewContainer: ViewContainer, location: ViewContainerLocation, requestedIndex?: number): void;
 
+	getViewContainerBadgeEnablementState(id: string): boolean;
+	setViewContainerBadgeEnablementState(id: string, badgesEnabled: boolean): void;
+
 	// Views
 	getViewDescriptorById(id: string): IViewDescriptor | null;
 	getViewContainerByViewId(id: string): ViewContainer | null;
@@ -647,7 +646,9 @@ export interface ITreeView extends IDisposable {
 
 	canSelectMany: boolean;
 
-	message?: string;
+	manuallyManageCheckboxes: boolean;
+
+	message?: string | IMarkdownString;
 
 	title: string;
 
@@ -661,7 +662,7 @@ export interface ITreeView extends IDisposable {
 
 	readonly onDidCollapseItem: Event<ITreeItem>;
 
-	readonly onDidChangeSelection: Event<ITreeItem[]>;
+	readonly onDidChangeSelectionAndFocus: Event<{ selection: readonly ITreeItem[]; focus: ITreeItem }>;
 
 	readonly onDidChangeVisibility: Event<boolean>;
 
@@ -673,9 +674,11 @@ export interface ITreeView extends IDisposable {
 
 	readonly onDidChangeWelcomeState: Event<void>;
 
+	readonly onDidChangeCheckboxState: Event<readonly ITreeItem[]>;
+
 	readonly container: any | undefined;
 
-	refresh(treeItems?: ITreeItem[]): Promise<void>;
+	refresh(treeItems?: readonly ITreeItem[]): Promise<void>;
 
 	setVisibility(visible: boolean): void;
 
@@ -689,9 +692,13 @@ export interface ITreeView extends IDisposable {
 
 	expand(itemOrItems: ITreeItem | ITreeItem[]): Promise<void>;
 
+	isCollapsed(item: ITreeItem): boolean;
+
 	setSelection(items: ITreeItem[]): void;
 
-	setFocus(item: ITreeItem): void;
+	getSelection(): ITreeItem[];
+
+	setFocus(item?: ITreeItem): void;
 
 	show(container: any): void;
 }
@@ -712,7 +719,8 @@ export interface ITreeViewDescriptor extends IViewDescriptor {
 
 export type TreeViewPaneHandleArg = {
 	$treeViewId: string;
-	$selectedTreeItems: boolean;
+	$selectedTreeItems?: boolean;
+	$focusedTreeItem?: boolean;
 };
 
 export type TreeViewItemHandleArg = {
@@ -737,6 +745,12 @@ export interface ITreeItemLabel {
 }
 
 export type TreeCommand = Command & { originalId?: string };
+
+export interface ITreeItemCheckboxState {
+	isChecked: boolean;
+	tooltip?: string;
+	accessibilityInformation?: IAccessibilityInformation;
+}
 
 export interface ITreeItem {
 
@@ -766,7 +780,11 @@ export interface ITreeItem {
 
 	children?: ITreeItem[];
 
+	parent?: ITreeItem;
+
 	accessibilityInformation?: IAccessibilityInformation;
+
+	checkbox?: ITreeItemCheckboxState;
 }
 
 export class ResolvableTreeItem implements ITreeItem {
@@ -830,6 +848,16 @@ export class ResolvableTreeItem implements ITreeItem {
 	}
 }
 
+export class NoTreeViewError extends Error {
+	override readonly name = 'NoTreeViewError';
+	constructor(treeViewId: string) {
+		super(localize('treeView.notRegistered', 'No tree view with id \'{0}\' registered.', treeViewId));
+	}
+	static is(err: Error): err is NoTreeViewError {
+		return err.name === 'NoTreeViewError';
+	}
+}
+
 export interface ITreeViewDataProvider {
 	readonly isTreeEmpty?: boolean;
 	onDidChangeEmpty?: Event<void>;
@@ -863,7 +891,6 @@ export interface IViewPaneContainer {
 	getActionsContext(): unknown;
 	getView(viewId: string): IView | undefined;
 	toggleViewVisibility(viewId: string): void;
-	saveState(): void;
 }
 
 export interface IViewBadge {

@@ -4,7 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { $, h, multibyteAwareBtoa } from 'vs/base/browser/dom';
+import { $, asCssValueWithDefault, h, multibyteAwareBtoa, trackAttributes, copyAttributes } from 'vs/base/browser/dom';
+import { timeout } from 'vs/base/common/async';
+import { runWithFakedTimers } from 'vs/base/test/common/timeTravelScheduler';
 
 suite('dom', () => {
 	test('hasClass', () => {
@@ -275,5 +277,63 @@ suite('dom', () => {
 		assert.strictEqual(result.editor.tagName, 'SPAN');
 		assert.strictEqual(result.editor.className, '');
 		assert.strictEqual(result.editor.childElementCount, 0);
+	});
+
+	test('cssValueWithDefault', () => {
+		assert.strictEqual(asCssValueWithDefault('red', 'blue'), 'red');
+		assert.strictEqual(asCssValueWithDefault(undefined, 'blue'), 'blue');
+		assert.strictEqual(asCssValueWithDefault('var(--my-var)', 'blue'), 'var(--my-var, blue)');
+		assert.strictEqual(asCssValueWithDefault('var(--my-var, red)', 'blue'), 'var(--my-var, red)');
+		assert.strictEqual(asCssValueWithDefault('var(--my-var, var(--my-var2))', 'blue'), 'var(--my-var, var(--my-var2, blue))');
+	});
+
+	test('copyAttributes', () => {
+		const elementSource = document.createElement('div');
+		elementSource.setAttribute('foo', 'bar');
+		elementSource.setAttribute('bar', 'foo');
+
+		const elementTarget = document.createElement('div');
+		copyAttributes(elementSource, elementTarget);
+
+		assert.strictEqual(elementTarget.getAttribute('foo'), 'bar');
+		assert.strictEqual(elementTarget.getAttribute('bar'), 'foo');
+	});
+
+	test('trackAttributes (unfiltered)', async () => {
+		return runWithFakedTimers({ useFakeTimers: true }, async () => {
+			const elementSource = document.createElement('div');
+			const elementTarget = document.createElement('div');
+
+			const disposable = trackAttributes(elementSource, elementTarget);
+
+			elementSource.setAttribute('foo', 'bar');
+			elementSource.setAttribute('bar', 'foo');
+
+			await timeout(1);
+
+			assert.strictEqual(elementTarget.getAttribute('foo'), 'bar');
+			assert.strictEqual(elementTarget.getAttribute('bar'), 'foo');
+
+			disposable.dispose();
+		});
+	});
+
+	test('trackAttributes (filtered)', async () => {
+		return runWithFakedTimers({ useFakeTimers: true }, async () => {
+			const elementSource = document.createElement('div');
+			const elementTarget = document.createElement('div');
+
+			const disposable = trackAttributes(elementSource, elementTarget, ['foo']);
+
+			elementSource.setAttribute('foo', 'bar');
+			elementSource.setAttribute('bar', 'foo');
+
+			await timeout(1);
+
+			assert.strictEqual(elementTarget.getAttribute('foo'), 'bar');
+			assert.strictEqual(elementTarget.getAttribute('bar'), null);
+
+			disposable.dispose();
+		});
 	});
 });
