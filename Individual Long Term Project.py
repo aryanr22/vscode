@@ -135,6 +135,8 @@ for x in range(len(anotherName)):
     row = [anotherName[x], anotherPosession[x], anotherMinutes[x], anotherOffense[x], anotherDefense[x], anotherTotal[x]]
     NextValues.append(row)
 
+
+
 class BasketBallPlayer:
     def __init__(self, name, posessions, minutes, offense, defense, total):
         self.name = name
@@ -149,11 +151,16 @@ class BasketBallPlayer:
     	His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
 
     def possPerMin(self):
-        return (self.posessions // self.minutes)
+        print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
     def possPerGame(self):
-        return(self.possessions // 82)
+        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if their numbers spread across 82 games")
     def minPerGame(self):
-    	return print(self.minutes // 82)
+    	print(f"He would have averaged approx. {self.minutes // 82} posessions per game, if their numbers spread across 82 games")
+
+
+found_player = None
+
+
 
 
 
@@ -167,7 +174,7 @@ for player in people_objects:
     print(player)
 
 name_input = input("Enter a Player Name: ")
-found_player = None
+
 
 for player in people_objects:
     if player.name == name_input:
@@ -177,8 +184,11 @@ for player in people_objects:
 
 if found_player:
     print(found_player)
+    found_player.possPerMin()
+    found_player.possPerGame()
+    found_player.minPerGame()
 else:
-    print("Player not found. Try again.")
+    print("Player not found.")
 
 
 
