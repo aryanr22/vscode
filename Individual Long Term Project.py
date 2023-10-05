@@ -144,6 +144,18 @@ class BasketBallPlayer:
         self.defense = defense
         self.total = total
 
+    def __str__(self):
+        return f"{self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. \
+    	His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
+
+    def possPerMin(self):
+        return (self.posessions // self.minutes)
+    def possPerGame(self):
+        return(self.possessions // 82)
+    def minPerGame(self):
+    	return print(self.minutes // 82)
+
+
 
 people_objects = []
 for data in NextValues:
@@ -151,8 +163,8 @@ for data in NextValues:
     player = BasketBallPlayer(name, posessions, minutes, offense, defense, total)
     people_objects.append(player)
 
-#for player in people_objects:
-#   print(player.name, player.posessions, player.minutes, player.offense, player.defense, player.total)
+for player in people_objects:
+    print(player)
 
 name_input = input("Enter a Player Name: ")
 found_player = None
@@ -164,7 +176,7 @@ for player in people_objects:
 
 
 if found_player:
-    print(player.name, player.posessions, player.minutes, player.offense, player.defense, player.total)
+    print(found_player)
 else:
     print("Player not found. Try again.")
 
