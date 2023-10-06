@@ -6,26 +6,26 @@ class BasketBallPlayer():
     Attributes
     ----------
     name : str
-			Full name of the basketball player
+				Full name of the basketball player
     posessions : int
-			The # of total posessions played by the basketball player
+				The # of total posessions played by the basketball player
     minutes : int
-			The # of total minutes played by the basketball player
+				The # of total minutes played by the basketball player
     __offense : float
-			The truncated RAPTOR offense rating for this player
+				The truncated RAPTOR offense rating for this player
     __defense : float
-			The truncated RAPTOR defense rating for this player
+				The truncated RAPTOR defense rating for this player
     __total : float
 		    The truncated RAPTOR total rating for this player
 
     Methods
     -------
     possPerMin() -> int
-			Prints the # of posessions each player averages per minute
-	possPerGame() -> int
-			Prints the # of posessions each player averages per game, if their total stats were spread across 82 games
-	minPerGame() -> int
-			Prints the # of minutes each player averages per game, if their total stats were spread across 82 games
+				Prints the # of posessions each player averages per minute
+		possPerGame() -> int
+				Prints the # of posessions each player averages per game, if their total stats were spread across 82 games
+		minPerGame() -> int
+				Prints the # of minutes each player averages per game, if their total stats were spread across 82 games
 
     '''
     def __init__(self, name, posessions, minutes, __offense, __defense, __total):
@@ -36,17 +36,17 @@ class BasketBallPlayer():
         Parameters
         ----------
         name : str
-				Full name of the basketball player
-    	posessions : int
-				The # of total posessions played by the basketball player
-    	minutes : int
-				The # of total minutes played by the basketball player
-    	__offense : float
-				The truncated RAPTOR offense rating for this player
-    	__defense : float
-				The truncated RAPTOR defense rating for this player
-    	__total : float
-		    	The truncated RAPTOR total rating for this player
+						Full name of the basketball player
+    		posessions : int
+						The # of total posessions played by the basketball player
+    		minutes : int
+						The # of total minutes played by the basketball player
+    		__offense : float
+						The truncated RAPTOR offense rating for this player
+    		__defense : float
+						The truncated RAPTOR defense rating for this player
+    		__total : float
+		    		The truncated RAPTOR total rating for this player
 
 
 
@@ -82,7 +82,7 @@ class BasketBallPlayer():
 				Includes the player's posessions per minute
 
         '''
-        print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
+        print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute.")
 
     def possPerGame(self):
         '''
@@ -96,7 +96,7 @@ class BasketBallPlayer():
 				Includes the player's posessions per game
 
         '''
-        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers were spread across 82 games")
+        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers were spread across 82 games.")
 
     def minPerGame(self):
         '''
