@@ -12,7 +12,7 @@
 # Updtaed: 04-October-2023
 #-----------------------------------------------------------------------------------------------
 import csv
-from BasketBallPlayer import BasketBallPlayer
+
 
 
 # Creating arrays for each row in the "Raptor New Data" csv file (int = truncated number, decimal = the leftover decimals)
@@ -173,12 +173,15 @@ for x in range(len(smallestName)):
     row = [smallestName[x], smallestPosession[x], smallestMinutes[x], smallestOffense[x], smallestDefense[x], smallestTotal[x]]
     nextValues.append(row)
 
+print(nextValues)
 
 
 foundPlayer = None
 
+
 # Creating a 2d array with each of the objects (players) and their attributes (statistics)
 playerObjects = []
+
 
 
 # Unpacking the 2-d array with all of the selective players' (those with >2500 min played) values, creating an object for each player, and storing it in the "playerObjects 2-d array"
@@ -187,27 +190,6 @@ for data in nextValues:
 	player = BasketBallPlayer(name, posessions, minutes, offense, defense, total)
 	playerObjects.append(player)
 
-
-# Taking user input to find a player to search from selective list
-
-nameInput = input("Enter a Player Name: ")
-
-# Comparing user input to selective list of players
-for player in playerObjects:
-    if player.name == nameInput:
-        foundPlayer = player
-    break
-
-
-# If match is found, the player's key values are printed, along with their posessions per minute, posessions per game, and minutes per game
-# If not found, a print statement is delivered, stating that
-if foundPlayer:
-	print(foundPlayer)
-	foundPlayer.possPerMin()
-	foundPlayer.possPerGame()
-	foundPlayer.minPerGame()
-else:
-   	print("Player not found.")
 
 
 
