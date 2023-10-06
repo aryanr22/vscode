@@ -11,11 +11,11 @@ class BasketBallPlayer():
 			The # of total posessions played by the basketball player
     minutes : int
 			The # of total minutes played by the basketball player
-    offense : float
+    __offense : float
 			The truncated RAPTOR offense rating for this player
-    defense : float
+    __defense : float
 			The truncated RAPTOR defense rating for this player
-    total : float
+    __total : float
 		    The truncated RAPTOR total rating for this player
 
     Methods
@@ -28,7 +28,7 @@ class BasketBallPlayer():
 			Prints the # of minutes each player averages per game, if their total stats were spread across 82 games
 
     '''
-    def __init__(self, name, posessions, minutes, offense, defense, total):
+    def __init__(self, name, posessions, minutes, __offense, __defense, __total):
         '''
         Constructor to build a basketball player object
 
@@ -41,11 +41,11 @@ class BasketBallPlayer():
 				The # of total posessions played by the basketball player
     	minutes : int
 				The # of total minutes played by the basketball player
-    	offense : float
+    	__offense : float
 				The truncated RAPTOR offense rating for this player
-    	defense : float
+    	__defense : float
 				The truncated RAPTOR defense rating for this player
-    	total : float
+    	__total : float
 		    	The truncated RAPTOR total rating for this player
 
 
@@ -54,9 +54,9 @@ class BasketBallPlayer():
         self.name = name
         self.posessions = posessions
         self.minutes = minutes
-        self.offense = offense
-        self.defense = defense
-        self.total = total
+        self.offense = __offense
+        self.defense = __defense
+        self.total = __total
 
     def __str__(self):
         '''
@@ -82,7 +82,7 @@ class BasketBallPlayer():
 				Includes the player's posessions per minute
 
         '''
-        return(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
+        print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute")
 
     def possPerGame(self):
         '''
@@ -96,7 +96,7 @@ class BasketBallPlayer():
 				Includes the player's posessions per game
 
         '''
-        return(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers were spread across 82 games")
+        print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers were spread across 82 games")
 
     def minPerGame(self):
         '''
@@ -110,4 +110,5 @@ class BasketBallPlayer():
 				Includes the player's minutes per game
 
         '''
-        return(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers were spread across 82 games")
+        print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers were spread across 82 games")
+
