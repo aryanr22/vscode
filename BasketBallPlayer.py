@@ -111,6 +111,3 @@ class BasketBallPlayer():
 
         '''
         print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers were spread across 82 games")
-
-
-
