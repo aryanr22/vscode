@@ -211,37 +211,3 @@ if foundPlayer:
 	foundPlayer.minPerGame()
 else:
    	print("Player not found.")
-
-# Taking user input to find a player to search from selective list
-
-nameInput = input("Enter a Player Name: ")
-
-# Comparing user input to selective list of players
-for player in playerObjects:
-    if player.name == nameInput:
-        foundPlayer = player
-    break
-
-
-# If match is found, the player's key values are printed, along with their posessions per minute, posessions per game, and minutes per game
-# If not found, a print statement is delivered, stating that
-if foundPlayer:
-	print(foundPlayer)
-	foundPlayer.possPerMin()
-	foundPlayer.possPerGame()
-	foundPlayer.minPerGame()
-else:
-   	print("Player not found.")
-
-
-
-
-#
-
-
-
-
-
-
-
-

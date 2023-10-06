@@ -28,7 +28,7 @@ class BasketBallPlayer():
 			Prints the # of minutes each player averages per game, if their total stats were spread across 82 games
 
     '''
-    def __init__(self, name, posessions, minutes, __offense, __defense, __total):
+    def __init__(self, name, posessions, minutes, offense, defense, total):
         '''
         Constructor to build a basketball player object
 
@@ -54,9 +54,9 @@ class BasketBallPlayer():
         self.name = name
         self.posessions = posessions
         self.minutes = minutes
-        self.offense = __offense
-        self.defense = __defense
-        self.total = __total
+        self.offense = offense
+        self.defense = defense
+        self.total = total
 
     def __str__(self):
         '''
