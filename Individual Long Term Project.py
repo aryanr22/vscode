@@ -145,8 +145,8 @@ smallestDefense = []
 smallestTotal = []
 
 # Opening "Shortened RAPTOR" csv file
-with open('Shortened RAPTOR.csv') as fiddle:
-	rows = csv.DictReader(fiddle)
+with open('Shortened RAPTOR.csv') as newfile:
+	rows = csv.DictReader(newfile)
 
 	# Taking all values in each row, converting types, and assigning to their respective 1-d arrays
 	for row in rows:
@@ -173,11 +173,6 @@ for x in range(len(smallestName)):
     row = [smallestName[x], smallestPosession[x], smallestMinutes[x], smallestOffense[x], smallestDefense[x], smallestTotal[x]]
     nextValues.append(row)
 
-print(nextValues)
-
-
-foundPlayer = None
-
 
 # Creating a 2d array with each of the objects (players) and their attributes (statistics)
 playerObjects = []
@@ -191,23 +186,19 @@ for data in nextValues:
 	playerObjects.append(player)
 
 
-# Taking user input to find a player to search from selective list
+# Printing all names that qualified for >2500 minutes played, thus are objects of the BasketBallPlayer Class
+for player in playerObjects:
+    print(player.name)
 
+# Taking user input to find a player to search from selective list
 nameInput = input("Enter a Player Name: ")
 
-# Comparing user input to selective list of players
+# Comparing user input to selective list of players, then printing stats if it matches
 for player in playerObjects:
-    if player.name == nameInput:
-        foundPlayer = player
-    break
+    if nameInput == player.name:
+       print(player)
+       player.possPerMin()
+       player.possPerGame()
+       player.minPerGame()
+       break
 
-
-# If match is found, the player's key values are printed, along with their posessions per minute, posessions per game, and minutes per game
-# If not found, a print statement is delivered, stating that
-if foundPlayer:
-	print(foundPlayer)
-	foundPlayer.possPerMin()
-	foundPlayer.possPerGame()
-	foundPlayer.minPerGame()
-else:
-   	print("Player not found.")
