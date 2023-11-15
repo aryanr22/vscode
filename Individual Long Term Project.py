@@ -9,7 +9,7 @@
 #
 # Author: Aryan Rahman
 # Created: 04-October-2023
-# Updtaed: 04-October-2023
+# Updated: 15-November-2023
 #-----------------------------------------------------------------------------------------------
 import csv
 
@@ -126,7 +126,6 @@ for x in range(len(intRaptorOffense)):
 		values.append(row)
 	else:
 		x +=1
-
 
 # Opening "Shortened RAPTOR" csv file to place the main values of the players with over 2500 total minutes
 with open(r'Shortened RAPTOR.csv', 'w', newline="\n") as f:
