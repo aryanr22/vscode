@@ -200,5 +200,6 @@ for player in playerObjects:
        player.possPerMin()
        player.possPerGame()
        player.minPerGame()
+       player.projectedSalary()
        break
 

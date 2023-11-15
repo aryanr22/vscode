@@ -112,3 +112,6 @@ class BasketBallPlayer():
         '''
         print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers were spread across 82 games")
 
+    def projectedSalary(self):
+      	print(f"His projected salary is {int((self.offense + self.defense + 1 + (self.minutes/1000) + (self.posessions/5000)) * 10000000)} ")
+
