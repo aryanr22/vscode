@@ -20,12 +20,14 @@ class BasketBallPlayer():
 
     Methods
     -------
-    possPerMin() -> int
+    possPerMin()
 				Prints the # of posessions each player averages per minute
-		possPerGame() -> int
+		possPerGame()
 				Prints the # of posessions each player averages per game, if their total stats were spread across 82 games
-		minPerGame() -> int
+		minPerGame()
 				Prints the # of minutes each player averages per game, if their total stats were spread across 82 games
+    projectedSalary()
+				Prints the projected salary of a player, with a complex formula used to calculate it
 
     '''
     def __init__(self, name, posessions, minutes, __offense, __defense, __total):
@@ -49,7 +51,6 @@ class BasketBallPlayer():
 		    		The truncated RAPTOR total rating for this player
 
 
-
         '''
         self.name = name
         self.posessions = posessions
@@ -66,7 +67,6 @@ class BasketBallPlayer():
         -------
         The basketball player's name, posessionss, minutes, offense, defense, total in a string
 
-
         '''
         return f"{self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
 
@@ -75,11 +75,6 @@ class BasketBallPlayer():
         Prints basketball player's posessions per minute
 
         This divides the player's total posessions by their total minutes
-
-        Prints
-        ------
-        String
-				Includes the player's posessions per minute
 
         '''
         print(f"He averaged approx. {self.posessions // self.minutes} posessions per minute.")
@@ -90,11 +85,6 @@ class BasketBallPlayer():
 
         This divides the player's total posessions by 82 (# of games in a season)
 
-        Prints
-        ------
-        String
-				Includes the player's posessions per game
-
         '''
         print(f"He would have averaged approx. {self.posessions // 82} posessions per game, if his numbers were spread across 82 games.")
 
@@ -104,13 +94,15 @@ class BasketBallPlayer():
 
         This divides the player's total minutes by 82 (# of games in a season)
 
-        Prints
-        ------
-        String
-				Includes the player's minutes per game
-
         '''
         print(f"He would have averaged approx. {self.minutes // 82} minutes per game, if his numbers were spread across 82 games")
 
     def projectedSalary(self):
-      print(f"His projected salary is {int((self.offense + self.defense + 1 + (self.minutes/1000) + (self.posessions/5000)) * 3000000)} ")
+      '''
+        Prints basketball player's projected salary
+
+        This adds the player's RAPTOR offense, RAPTOR defense, minutes/1000, posessions/5000 together, and multiplies it by 3000000
+
+        '''
+      print(f"His projected salary is ${int((self.offense + self.defense + 1 + (self.minutes/1000) + (self.posessions/5000)) * 3000000)} ")
+
