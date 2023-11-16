@@ -223,3 +223,7 @@ DrGreen = Defender("Draymond Green", 5768, 2664, -1.0, 3.0, 2.0, 78, 33, 77)
 #ADavis = Defender("Anthony Davis", 5327, 2512, 2.0, 4.0, 7.0)
 #DrGreen = Defender("Draymond Green", 5768, 2664, -1.0, 3.0, 2.0)
 
+DMitchell.skillCalc()
+DMitchell.remainingStamina()
+DMitchell.shootingPercentCalc()
+DMitchell.projectedSalary()

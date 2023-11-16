@@ -17,7 +17,6 @@ class Scorer(BasketBallPlayer):
 
 
     def __str__(self):
-        super().__str__()
         '''
 
         '''
@@ -26,20 +25,21 @@ class Scorer(BasketBallPlayer):
 
     def skillCalc(self):
         skill = int(self.offense * 10)
-        print(f"This player's skil is {skill}")
+        print(f"{self.name} player's skill is {skill}")
         hoursPracticed = int(input("How many hours did this player practice? "))
-        skill = int((self.offense + hoursPracticed) * 100)
-        print(f"This player's new skil is {skill}")
+        skill = int((self.offense + hoursPracticed) * 10)
+        print(f"{self.name}'s new skil is {skill}")
 
     def remainingStamina(self):
-        minutesPlayedInGame = int(input("How many minutes did this player play? "))
+        print(f"{self.name}'s stamina is {self.stamina}")
+        minutesPlayedInGame = int(input(f"How many minutes did this player play? "))
         print(f"His remaining stamina is {int(self.stamina - minutesPlayedInGame)}")
 
     def shootingPercentCalc(self):
         attemptedShots = int(input("How many shots did this player take? "))
-        print(f"His projected field goal percentage is {int((attemptedShots/self.offense)*10)}")
+        print(f"{self.name}'s projected field goal percentage is {int((attemptedShots/self.offense)*10)}")
 
     def projectedSalary(self):
         super().projectedSalary()
-        print(f"His age-adjusted projected salary is {int((self.offense + self.defense + 1 + (self.minutes/1000) + (self.posessions/5000) - (self.age/30)) * 3000000)} ")
+        print(f"{self.name}'s age-adjusted projected salary is {int((self.offense + self.defense + 1 + (self.minutes/1000) + (self.posessions/5000) - (self.age/30)) * 3000000)} ")
 

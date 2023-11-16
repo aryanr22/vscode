@@ -6,17 +6,18 @@ class Defender(BasketBallPlayer):
 
     '''
     def __init__(self, name, posessions, minutes, __offense, __defense, __total, speed, __age, stamina):
-        super().__str__(name, posessions, minutes, __offense, __defense, __total)
-
-        '''
-
-        '''
+        super().__init__(name, posessions, minutes, __offense, __defense, __total)
         self.speed = speed
         self.age = __age
         self.stamina = stamina
 
+        '''
+
+        '''
+
+
     def __str__(self):
-        super().__str__()
+
         '''
 
         '''
