@@ -5,27 +5,24 @@ class Scorer(BasketBallPlayer):
     '''
 
     '''
-    def __init__(self, name, posessions, minutes, __offense, __defense, __total):
+    def __init__(self, name, posessions, minutes, __offense, __defense, __total, speed, __age, stamina):
+        super().__init__(name, posessions, minutes, __offense, __defense, __total)
+        self.speed = speed
+        self.age = __age
+        self.stamina = stamina
 
         '''
 
         '''
-        self.name = name
-        self.posessions = posessions
-        self.minutes = minutes
-        self.offense = __offense
-        self.defense = __defense
-        self.total = __total
+
 
     def __str__(self):
         super().__str__()
         '''
 
         '''
-        return f"{self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}."
+        return f"The scorer {self.name} had {self.posessions} posessions and played a total of {self.minutes} minutes this season. His RAPTOR offense was {self.offense}, RAPTOR defense was {self.defense}, and his RAPTOR total was {self.total}. His speed rating was {self.speed} ovr. His stamina rating was {self.stamina} ovr."
 
-    def ppgCalc(self):
-        print(f"His projected point per game stat is {int((self.offense + 3)*5)}")
 
     def skillCalc(self):
         skill = int(self.offense * 10)
@@ -34,7 +31,15 @@ class Scorer(BasketBallPlayer):
         skill = int((self.offense + hoursPracticed) * 100)
         print(f"This player's new skil is {skill}")
 
+    def remainingStamina(self):
+        minutesPlayedInGame = int(input("How many minutes did this player play? "))
+        print(f"His remaining stamina is {int(self.stamina - minutesPlayedInGame)}")
 
     def shootingPercentCalc(self):
         attemptedShots = int(input("How many shots did this player take? "))
         print(f"His projected field goal percentage is {int((attemptedShots/self.offense)*10)}")
+
+    def projectedSalary(self):
+        super().projectedSalary()
+        print(f"His age-adjusted projected salary is {int((self.offense + self.defense + 1 + (self.minutes/1000) + (self.posessions/5000) - (self.age/30)) * 3000000)} ")
+

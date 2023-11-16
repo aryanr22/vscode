@@ -1,52 +1,52 @@
-name                     ,posessions ,minutes ,offense ,defense ,total
-Bam Adebayo              ,      6933 ,   3448 ,-2.0    ,2.0     ,1.0
-Harrison Barnes          ,      6075 ,   2858 ,0.0     ,0.0     ,1.0
-Scottie Barnes           ,      5507 ,   2678 ,0.0     ,0.0     ,0.0
-RJ Barrett               ,      5830 ,   2852 ,-1.0    ,-3.0    ,-4.0
-Mikal Bridges            ,      6380 ,   3120 ,1.0     ,0.0     ,1.0
-Bruce Brown              ,      5766 ,   2810 ,-2.0    ,0.0     ,-1.0
-Jaylen Brown             ,      6542 ,   3156 ,-1.0    ,0.0     ,0.0
-Jalen Brunson            ,      5693 ,   2822 ,5.0     ,-1.0    ,4.0
-Jimmy Butler             ,      6056 ,   3012 ,5.0     ,0.0     ,6.0
-Kentavious Caldwell-Pope ,      6336 ,   3052 ,0.0     ,0.0     ,1.0
-Anthony Davis            ,      5327 ,   2512 ,2.0     ,4.0     ,7.0
-DeMar DeRozan            ,      5577 ,   2682 ,2.0     ,0.0     ,2.0
-Spencer Dinwiddie        ,      5768 ,   2884 ,1.0     ,-2.0    ,0.0
-Anthony Edwards          ,      6418 ,   3041 ,2.0     ,0.0     ,2.0
-Joel Embiid              ,      5286 ,   2620 ,3.0     ,4.0     ,7.0
-De'Aaron Fox             ,      5829 ,   2705 ,4.0     ,-2.0    ,2.0
-Darius Garland           ,      5317 ,   2636 ,3.0     ,0.0     ,4.0
-Aaron Gordon             ,      5715 ,   2768 ,1.0     ,0.0     ,2.0
-Draymond Green           ,      5768 ,   2664 ,-1.0    ,3.0     ,2.0
-Jalen Green              ,      5456 ,   2602 ,1.0     ,-3.0    ,-2.0
-James Harden             ,      5091 ,   2562 ,4.0     ,-1.0    ,4.0
-Tobias Harris            ,      5657 ,   2828 ,0.0     ,-1.0    ,-1.0
-Josh Hart                ,      5752 ,   2807 ,1.0     ,1.0     ,2.0
-Al Horford               ,      5234 ,   2539 ,-1.0    ,2.0     ,1.0
-LeBron James             ,      5487 ,   2573 ,4.0     ,0.0     ,4.0
-Nikola Jokic             ,      6435 ,   3112 ,9.0     ,3.0     ,13.0
-Zach LaVine              ,      5749 ,   2768 ,2.0     ,-2.0    ,1.0
-Brook Lopez              ,      5475 ,   2555 ,-1.0    ,4.0     ,4.0
-Caleb Martin             ,      5599 ,   2771 ,-1.0    ,1.0     ,0.0
-CJ McCollum              ,      5497 ,   2649 ,1.0     ,-2.0    ,-1.0
-Donovan Mitchell         ,      5302 ,   2639 ,5.0     ,-2.0    ,4.0
-Evan Mobley              ,      5852 ,   2903 ,-2.0    ,1.0     ,0.0
-Dejounte Murray          ,      6111 ,   2883 ,0.0     ,-2.0    ,-1.0
-Jamal Murray             ,      6004 ,   2932 ,3.0     ,-1.0    ,3.0
-Keegan Murray            ,      5451 ,   2576 ,-1.0    ,-2.0    ,-2.0
-Royce O'Neale            ,      5168 ,   2527 ,-1.0    ,0.0     ,-1.0
-Jordan Poole             ,      5955 ,   2742 ,-2.0    ,-2.0    ,-4.0
-Immanuel Quickley        ,      5134 ,   2519 ,0.0     ,2.0     ,3.0
-Julius Randle            ,      6218 ,   3067 ,2.0     ,-2.0    ,0.0
-D'Angelo Russell         ,      5848 ,   2777 ,2.0     ,-2.0    ,0.0
-Domantas Sabonis         ,      6254 ,   2979 ,2.0     ,0.0     ,2.0
-Pascal Siakam            ,      5424 ,   2652 ,2.0     ,-2.0    ,0.0
-Marcus Smart             ,      5478 ,   2636 ,0.0     ,0.0     ,1.0
-Max Strus                ,      5918 ,   2920 ,-1.0    ,-2.0    ,-2.0
-Jayson Tatum             ,      7273 ,   3531 ,4.0     ,-1.0    ,4.0
-Klay Thompson            ,      5934 ,   2747 ,0.0     ,-2.0    ,-1.0
-Fred VanVleet            ,      5188 ,   2535 ,3.0     ,1.0     ,5.0
-Nikola Vucevic           ,      5681 ,   2746 ,-1.0    ,-1.0    ,-2.0
-Franz Wagner             ,      5497 ,   2609 ,0.0     ,1.0     ,2.0
-Derrick White            ,      6019 ,   2912 ,1.0     ,2.0     ,4.0
-Trae Young               ,      6020 ,   2771 ,4.0     ,-1.0    ,3.0
+name,posessions,minutes,offense,defense,total
+Bam Adebayo,6933,3448,-2.0,2.0,1.0
+Harrison Barnes,6075,2858,0.0,0.0,1.0
+Scottie Barnes,5507,2678,0.0,0.0,0.0
+RJ Barrett,5830,2852,-1.0,-3.0,-4.0
+Mikal Bridges,6380,3120,1.0,0.0,1.0
+Bruce Brown,5766,2810,-2.0,0.0,-1.0
+Jaylen Brown,6542,3156,-1.0,0.0,0.0
+Jalen Brunson,5693,2822,5.0,-1.0,4.0
+Jimmy Butler,6056,3012,5.0,0.0,6.0
+Kentavious Caldwell-Pope,6336,3052,0.0,0.0,1.0
+Anthony Davis,5327,2512,2.0,4.0,7.0
+DeMar DeRozan,5577,2682,2.0,0.0,2.0
+Spencer Dinwiddie,5768,2884,1.0,-2.0,0.0
+Anthony Edwards,6418,3041,2.0,0.0,2.0
+Joel Embiid,5286,2620,3.0,4.0,7.0
+De'Aaron Fox,5829,2705,4.0,-2.0,2.0
+Darius Garland,5317,2636,3.0,0.0,4.0
+Aaron Gordon,5715,2768,1.0,0.0,2.0
+Draymond Green,5768,2664,-1.0,3.0,2.0
+Jalen Green,5456,2602,1.0,-3.0,-2.0
+James Harden,5091,2562,4.0,-1.0,4.0
+Tobias Harris,5657,2828,0.0,-1.0,-1.0
+Josh Hart,5752,2807,1.0,1.0,2.0
+Al Horford,5234,2539,-1.0,2.0,1.0
+LeBron James,5487,2573,4.0,0.0,4.0
+Nikola Jokic,6435,3112,9.0,3.0,13.0
+Zach LaVine,5749,2768,2.0,-2.0,1.0
+Brook Lopez,5475,2555,-1.0,4.0,4.0
+Caleb Martin,5599,2771,-1.0,1.0,0.0
+CJ McCollum,5497,2649,1.0,-2.0,-1.0
+Donovan Mitchell,5302,2639,5.0,-2.0,4.0
+Evan Mobley,5852,2903,-2.0,1.0,0.0
+Dejounte Murray,6111,2883,0.0,-2.0,-1.0
+Jamal Murray,6004,2932,3.0,-1.0,3.0
+Keegan Murray,5451,2576,-1.0,-2.0,-2.0
+Royce O'Neale,5168,2527,-1.0,0.0,-1.0
+Jordan Poole,5955,2742,-2.0,-2.0,-4.0
+Immanuel Quickley,5134,2519,0.0,2.0,3.0
+Julius Randle,6218,3067,2.0,-2.0,0.0
+D'Angelo Russell,5848,2777,2.0,-2.0,0.0
+Domantas Sabonis,6254,2979,2.0,0.0,2.0
+Pascal Siakam,5424,2652,2.0,-2.0,0.0
+Marcus Smart,5478,2636,0.0,0.0,1.0
+Max Strus,5918,2920,-1.0,-2.0,-2.0
+Jayson Tatum,7273,3531,4.0,-1.0,4.0
+Klay Thompson,5934,2747,0.0,-2.0,-1.0
+Fred VanVleet,5188,2535,3.0,1.0,5.0
+Nikola Vucevic,5681,2746,-1.0,-1.0,-2.0
+Franz Wagner,5497,2609,0.0,1.0,2.0
+Derrick White,6019,2912,1.0,2.0,4.0
+Trae Young,6020,2771,4.0,-1.0,3.0

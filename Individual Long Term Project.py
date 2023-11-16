@@ -15,6 +15,10 @@ import csv
 
 from BasketBallPlayer import BasketBallPlayer
 
+from Scorer import Scorer
+
+from Defender import Defender
+
 # Creating arrays for each row in the "Raptor New Data" csv file (int = truncated number, decimal = the leftover decimals)
 name = []
 posessions = []
@@ -186,8 +190,8 @@ for data in nextValues:
 
 
 # Printing all names that qualified for >2500 minutes played, thus are objects of the BasketBallPlayer Class
-for player in playerObjects:
-    print(player.name)
+#for player in playerObjects:
+ #   print(player.name)
 
 # Taking user input to find a player to search from selective list
 nameInput = input("Enter a Player Name: ")
@@ -201,4 +205,21 @@ for player in playerObjects:
        player.minPerGame()
        player.projectedSalary()
        break
+
+
+DMitchell = Scorer("Donovan Mitchell", 5302, 2639, 5.0, -2.0, 4.0, 98, 27, 98)
+TYoung = Scorer("Trae Young", 6020, 2771, 4.0, -1.0, 3.0, 97, 25, 98)
+LJames = Scorer("Lebron James", 5487, 2573, 4.0, 0.0, 4.0, 95, 38, 90)
+
+BAdebayo = Defender("Bam Adebayo", 6933, 3448, -2.0, 2.0, 1.0, 87, 26, 90)
+ADavis = Defender("Anthony Davis", 5327, 2512, 2.0, 4.0, 7.0, 88, 30, 84)
+DrGreen = Defender("Draymond Green", 5768, 2664, -1.0, 3.0, 2.0, 78, 33, 77)
+
+#DMitchell = Scorer("Donovan Mitchell", 5302, 2639, 5.0, -2.0, 4.0)
+#TYoung = Scorer("Trae Young", 6020, 2771, 4.0, -1.0, 3.0)
+#LJames = Scorer("Lebron James", 5487, 2573, 4.0, 0.0, 4.0)
+
+#BAdebayo = Defender("Bam Adebayo", 6933, 3448, -2.0, 2.0, 1.0)
+#ADavis = Defender("Anthony Davis", 5327, 2512, 2.0, 4.0, 7.0)
+#DrGreen = Defender("Draymond Green", 5768, 2664, -1.0, 3.0, 2.0)
 
