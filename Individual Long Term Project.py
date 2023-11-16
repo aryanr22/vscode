@@ -124,8 +124,8 @@ with open('RAPTOR 2022-23 With New Data.csv') as file:
 # Taking all values from the 6 different 1-d arrays
 for x in range(len(intRaptorOffense)):
 
-    # Checking if the player's total minutes played is over 2500, then adding all of their main values (name, possessions, minutes, offense, defense, total) if is true
-	if(shortMinutesPlayed[x] >= 2500):
+    # Checking if the player's total minutes played is over 1500, then adding all of their main values (name, possessions, minutes, offense, defense, total) if is true
+	if(shortMinutesPlayed[x] >= 1500):
 		row = [shortName[x], shortPosessions[x], shortMinutesPlayed[x], shortOffense[x], shortDefense[x], shortTotal[x]]
 		values.append(row)
 	else:
@@ -182,16 +182,16 @@ playerObjects = []
 
 
 
-# Unpacking the 2-d array with all of the selective players' (those with >2500 min played) values, creating an object for each player, and storing it in the "playerObjects 2-d array"
+# Unpacking the 2-d array with all of the selective players' (those with >1500 min played) values, creating an object for each player, and storing it in the "playerObjects 2-d array"
 for data in nextValues:
 	name, posessions, minutes, offense, defense, total = data
 	player = BasketBallPlayer(name, posessions, minutes, offense, defense, total)
 	playerObjects.append(player)
 
 
-# Printing all names that qualified for >2500 minutes played, thus are objects of the BasketBallPlayer Class
+# Printing all names that qualified for >1500 minutes played, thus are objects of the BasketBallPlayer Class
 #for player in playerObjects:
- #   print(player.name)
+#   print(player.name)
 
 # Taking user input to find a player to search from selective list
 nameInput = input("Enter a Player Name: ")
@@ -206,7 +206,7 @@ for player in playerObjects:
        player.projectedSalary()
        break
 
-
+# Creating objects of children classes (Scorer and Defender)
 DMitchell = Scorer("Donovan Mitchell", 5302, 2639, 5.0, -2.0, 4.0, 98, 27, 98)
 TYoung = Scorer("Trae Young", 6020, 2771, 4.0, -1.0, 3.0, 97, 25, 98)
 LJames = Scorer("Lebron James", 5487, 2573, 4.0, 0.0, 4.0, 95, 38, 90)
@@ -216,13 +216,37 @@ ADavis = Defender("Anthony Davis", 5327, 2512, 2.0, 4.0, 7.0, 88, 30, 84)
 DrGreen = Defender("Draymond Green", 5768, 2664, -1.0, 3.0, 2.0, 78, 33, 77)
 
 
+# Calling methods for multiple objects of each child class
+print(DMitchell)
+DMitchell.skillCalc()
+DMitchell.remainingStamina()
+DMitchell.projectedSalary()
 
-#DMitchell.skillCalc()
-#DMitchell.remainingStamina()
-#DMitchell.shootingPercentCalc()
-#DMitchell.projectedSalary()
-
+print(TYoung)
 TYoung.skillCalc()
 TYoung.remainingStamina()
-TYoung.shootingPercentCalc()
 TYoung.projectedSalary()
+
+print(LJames)
+LJames.skillCalc()
+LJames.remainingStamina()
+LJames.projectedSalary()
+
+print(BAdebayo)
+BAdebayo.speedTraining()
+BAdebayo.shootingPercentCalc()
+BAdebayo.projectedSalary()
+
+print(ADavis)
+ADavis.speedTraining()
+ADavis.shootingPercentCalc()
+ADavis.projectedSalary()
+
+print(DrGreen)
+DrGreen.speedTraining()
+DrGreen.shootingPercentCalc()
+DrGreen.projectedSalary()
+
+
+
+
