@@ -13,6 +13,10 @@
 #-----------------------------------------------------------------------------------------------
 import csv
 
+import time
+
+import numpy
+
 from BasketBallPlayer import BasketBallPlayer
 
 from Scorer import Scorer
@@ -198,13 +202,312 @@ nameInput = input("Enter a Player Name: ")
 
 # Comparing user input to selective list of players, then printing stats if it matches
 for player in playerObjects:
-    if nameInput == player.name:
+    if nameInput != player.name:
+       print(f"[PLAYER NOT FOUND] {player.name} found instead. Trying again...")
+    elif nameInput == player.name:
+       print("[PLAYER FINALLY FOUND]")
        print(player)
        player.possPerMin()
        player.possPerGame()
        player.minPerGame()
        player.projectedSalary()
        break
+
+
+# Taking players from NextValues, creating new csv files that are ordered
+
+
+# Ordered Raptor Offense - Bubble sort (low to high)
+
+
+lenOffense = len(smallestOffense)
+
+
+for y in range(lenOffense):
+    for z in range(0, lenOffense - y - 1):
+        if smallestOffense[z] > smallestOffense[z + 1]:
+            smallestOffense[z], smallestOffense[z + 1] = smallestOffense[z + 1], smallestOffense[z]
+
+
+
+
+# Creating a tracker number to give context to rankings of each value
+trackerNumber = []
+
+for a in range(1, lenOffense + 1):
+    trackerNumber.append(a)
+
+offenseOrd = []
+# Writing to Ordered Offense CSV
+for x in range(lenOffense):
+    row = [trackerNumber[x], smallestOffense[x]]
+    offenseOrd.append(row)
+
+with open(r'Ordered Offense RAPTOR.csv', 'w', newline="\n") as f:
+    wr = csv.writer(f)
+    # Headers + incorporating the 2-d array
+    wr.writerow(['Ranking', 'Offense'])
+    wr.writerows(offenseOrd)
+
+
+# Ordered Raptor Defense - selection sort
+
+lenDefense = len(smallestDefense)
+
+
+for a in range(lenDefense):
+    minIndex = a
+
+    for b in range (a + 1, lenDefense):
+         if smallestDefense[b] < smallestDefense[minIndex]:
+              minIndex = b
+    smallestDefense[a], smallestDefense[minIndex] = smallestDefense[minIndex], smallestDefense[a]
+
+
+
+
+defenseOrd = []
+# Writing to Ordered Defense CSV
+for x in range(lenDefense):
+    row = [trackerNumber[x], smallestDefense[x]]
+    defenseOrd.append(row)
+
+
+with open(r'Ordered Defense RAPTOR.csv', 'w', newline="\n") as f:
+    wr = csv.writer(f)
+    # Headers + incorporating the 2-d array
+    wr.writerow(['Ranking', 'Defense'])
+    wr.writerows(defenseOrd)
+
+
+
+#Ordered Raptor Total - quick sort, bubble sort, and selection sort
+
+#QUICK--------------------------------------------------------------------------
+
+
+totalQuickSortStartTime = time.perf_counter_ns()
+
+def quickSort(smallestTotal):
+    if len(smallestTotal) <= 1:
+       return smallestTotal
+    else:
+        pivot = smallestTotal[0]
+        lessThanPivot = [c for c in smallestTotal[1:] if c <= pivot]
+        greaterThanPivot = [c for c in smallestTotal[1:] if c > pivot]
+        return(quickSort(lessThanPivot) + [pivot] + quickSort(greaterThanPivot))
+
+quickSortTotal = quickSort(smallestTotal)
+
+totalQuickSortEndTime = time.perf_counter_ns()
+
+totalQuickSortTime = totalQuickSortEndTime - totalQuickSortStartTime
+
+print(f"It took quick sort {totalQuickSortTime} nanoseconds to sort the total raptor ratings from low - high")
+
+
+
+# BUBBLE --------------------------------------------------------------------------------------------
+
+
+totalBubbleSortStartTime = time.perf_counter_ns()
+
+def bubbleSort(array):
+	for y in range(len(smallestTotal)):
+		for z in range(0, len(array) - y - 1):
+			if array[z] > array[z + 1]:
+				array[z], array[z + 1] = array[z + 1], array[z]
+
+bubbleSortTotal = bubbleSort(smallestTotal)
+
+totalBubbleSortEndTime = time.perf_counter_ns()
+
+totalBubbleSortTime = totalBubbleSortEndTime - totalBubbleSortStartTime
+
+print(f"It took bubble sort {totalBubbleSortTime} nanoseconds to sort the total raptor ratings from low - high")
+
+
+# SELECTION ----------------------------------------------------------------------------------------
+
+totalSelectionSortStartTime = time.perf_counter_ns()
+
+def selectionSort(array):
+	for a in range(len(smallestTotal)):
+		minIndex = a
+
+		for b in range (a + 1, len(array)):
+			if array[b] < array[minIndex]:
+				minIndex = b
+		array[a], array[minIndex] = array[minIndex], array[a]
+
+selectionSortTotal = selectionSort(smallestTotal)
+totalSelectionSortEndTime = time.perf_counter_ns()
+
+totalSelectionSortTime = totalSelectionSortEndTime - totalSelectionSortStartTime
+
+print(f"It took selection sort {totalSelectionSortTime} nanoseconds to sort the total raptor ratings from low - high")
+
+#----------------------------------------------------------------------------------------------------------------------
+
+
+# Creating a tracker number to give context to rankings of each value
+
+
+totalOrd = []
+
+
+# Writing to Ordered Offense CSV
+for x in range(len(smallestTotal)):
+    row = [trackerNumber[x], smallestTotal[x]]
+    totalOrd.append(row)
+
+#print(smallestTotal)
+
+
+
+with open(r'Ordered Total RAPTOR.csv', 'w', newline="\n") as f:
+    wr = csv.writer(f)
+    # Headers + incorporating the 2-d array
+    wr.writerow(['Ranking', 'Total'])
+    wr.writerows(totalOrd)
+
+
+
+nameOrd = []
+# Writing to Ordered Offense CSV
+for x in range(len(smallestName)):
+    row = [trackerNumber[x], sortedNames[x]]
+    nameOrd.append(row)
+
+
+with open(r'Ordered Name RAPTOR.csv', 'w', newline='\n') as g:
+    wr = csv.writer(g)
+    # Headers + incorporating the 2-d array
+    wr.writerow(['Tracker', 'Name'])
+    wr.writerows(nameOrd)
+
+# creating id's
+numpy.random.seed(86)
+
+randomID = numpy.random.randint(1000, 10000, 197)
+
+
+idRandom = []
+
+for x in range(len(smallestName)):
+    row = [randomID[x]]
+    idRandom.append(row)
+
+#create loop that incorporates values at a time
+
+idNextValues = []
+
+
+for x in range(len(smallestName)):
+    row = [idRandom[x], smallestName[x], smallestPosession[x], smallestMinutes[x]]
+    idNextValues.append(row)
+
+sortedNextValues = sorted(idNextValues, key=lambda x: x[1])
+
+
+
+with open(r'Ordered with ID RAPTOR.csv', 'w', newline='\n') as g:
+    wr = csv.writer(g)
+    # Headers + incorporating the 2-d array
+    wr.writerow(['id','name', 'posessions', 'minutes'])
+    wr.writerows(sortedNextValues)
+
+
+# Recursion ------------------------------------------------------------------------------------------------------------
+
+# Fib sequence---------------------
+memorized = {}
+
+def recursiveFib(n):
+    if n in memorized:
+        return memorized[n]
+    if n <= 1:
+        result = n
+    else:
+        result = recursiveFib(n - 1) + recursiveFib(n - 2)
+    memorized[n] = result
+    return result
+
+fanInput = int(input("How many fans (in millions) does your favourite player have right now? "))
+
+fibCalc = recursiveFib(fanInput)
+
+print(f"Your favourite player will have {fibCalc} million fans in 10 years!")
+
+
+# Without Recursion------------------------------------------
+
+#def nonRecursiveFibonacci(x):
+#    series = []
+#    a, b = 0, 1
+#
+#    while len(series) < x:
+#        series.append(a)
+#        a, b = b, a + b
+#
+#    return series
+
+#x = 10
+
+#fibResult = nonRecursiveFibonacci(x)
+#print(fibResult)
+
+
+#Linear --------------------------------------------------------------------------------------------------------------------
+searchedNameInput = input("Input a player to return their personal id, poss, mins, offense, defense, and total! ")
+
+linearSearchStart = time.perf_counter_ns()
+
+def linearSearch(array, target):
+    for player in array:
+        if len(player) >= 2 and player[1] == target:
+        	return(player)
+
+linearSearchName = linearSearch(sortedNextValues, searchedNameInput)
+
+print(linearSearchName)
+
+linearSearchEnd = time.perf_counter_ns()
+
+linearSearchTime = linearSearchEnd - linearSearchStart
+
+print(f"It took linear search {linearSearchTime} nanoseconds to look for {searchedNameInput}")
+
+# Binary -------------------------------------------------------------------------------------------------------------------
+
+
+binarySearchStart = time.perf_counter_ns()
+
+def binarySearch(array, target):
+    start = 0
+    end = len(array) - 1
+    while start <= end:
+        middle = (start + end) // 2
+        midpoint = array[middle][1]
+        if midpoint == target:
+            return array[middle]
+        elif midpoint < target:
+            start = middle + 1
+        else:
+            end = middle - 1
+    return None
+
+nameBinarySearch = binarySearch(sortedNextValues, searchedNameInput)
+
+print(nameBinarySearch)
+
+binarySearchEnd = time.perf_counter_ns()
+
+binarySearchTime = binarySearchEnd - binarySearchStart
+
+print(f"It took binary search {binarySearchTime} nanoseconds to look for {searchedNameInput}")
+
+#-----------------------------------------------------------------------------------------------
 
 # Creating objects of children classes (Scorer and Defender)
 DMitchell = Scorer("Donovan Mitchell", 5302, 2639, 5.0, -2.0, 4.0, 98, 27, 98)
@@ -217,35 +520,35 @@ DrGreen = Defender("Draymond Green", 5768, 2664, -1.0, 3.0, 2.0, 78, 33, 77)
 
 
 # Calling methods for multiple objects of each child class
-print(DMitchell)
-DMitchell.skillCalc()
-DMitchell.remainingStamina()
-DMitchell.projectedSalary()
+#print(DMitchell)
+#DMitchell.skillCalc()
+#DMitchell.remainingStamina()
+#DMitchell.projectedSalary()
 
-print(TYoung)
-TYoung.skillCalc()
-TYoung.remainingStamina()
-TYoung.projectedSalary()
+#print(TYoung)
+#TYoung.skillCalc()
+#TYoung.remainingStamina()
+#TYoung.projectedSalary()
 
-print(LJames)
-LJames.skillCalc()
-LJames.remainingStamina()
-LJames.projectedSalary()
+#print(LJames)
+#LJames.skillCalc()
+#LJames.remainingStamina()
+#LJames.projectedSalary()
 
-print(BAdebayo)
-BAdebayo.speedTraining()
-BAdebayo.shootingPercentCalc()
-BAdebayo.projectedSalary()
+#print(BAdebayo)
+#BAdebayo.speedTraining()
+#BAdebayo.shootingPercentCalc()
+#BAdebayo.projectedSalary()
 
-print(ADavis)
-ADavis.speedTraining()
-ADavis.shootingPercentCalc()
-ADavis.projectedSalary()
+#print(ADavis)
+#ADavis.speedTraining()
+#ADavis.shootingPercentCalc()
+#ADavis.projectedSalary()
 
-print(DrGreen)
-DrGreen.speedTraining()
-DrGreen.shootingPercentCalc()
-DrGreen.projectedSalary()
+#print(DrGreen)
+#DrGreen.speedTraining()
+#DrGreen.shootingPercentCalc()
+#DrGreen.projectedSalary()
 
 
 
